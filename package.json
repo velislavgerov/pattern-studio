@@ -1,0 +1,30 @@
+{
+  "name": "pattern-studio",
+  "version": "0.0.1",
+  "description": "An app to design and print patterns.",
+  "main": "/src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thunderstruck47/pattern-studio.git"
+  },
+  "keywords": [
+    "design",
+    "pattern",
+    "print",
+    "studio"
+  ],
+  "author": "Velislav Gerov <vgerov93@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/thunderstruck47/pattern-studio/issues"
+  },
+  "homepage": "https://github.com/thunderstruck47/pattern-studio#readme",
+  "dependencies": {
+    "antd": "^3.26.2",
+    "fabric": "^3.5.1",
+    "react": "^16.12.0"
+  }
+}
