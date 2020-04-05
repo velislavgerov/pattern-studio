@@ -1,0 +1,15 @@
+#root {
+  height: 100%;
+}
+
+.app-layout {
+  height: 100%;
+}
+
+.app-layout-sub-header-background {
+  background: #fff;
+}
+ 
+.app-layout-background {
+  background: #fff;
+}
