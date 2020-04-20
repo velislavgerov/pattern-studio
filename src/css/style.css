@@ -13,3 +13,11 @@
 .app-layout-background {
   background: #fff;
 }
+
+.app-layout-content-sider-background {
+  background: #fff;
+}
+
+#canvas {
+  border: 1px solid #f0f0f0;
+}
