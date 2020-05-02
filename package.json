@@ -4,9 +4,11 @@
   "description": "An app to design and print patterns.",
   "main": "/src/index.js",
   "scripts": {
-    "start": "webpack-dev-server --open --mode development",
+    "start-dev": "webpack-dev-server --open --mode development",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "webpack --mode production"
+    "build": "webpack --mode production",
+    "start": "node server.js",
+    "heroku-postbuild": "webpack -p"
   },
   "repository": {
     "type": "git",
