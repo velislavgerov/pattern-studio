@@ -31,7 +31,7 @@ class App extends React.Component {
             <Canvas />
           </div>
         </Content>
-        <Footer className="app-layout-footer">Created with ❤️ by <a href="https://gerov.dev">thunderstruck47</a></Footer>
+        <Footer className="app-layout-footer">Handcrafted by <a href="https://gerov.dev">thunderstruck47</a> with ❤️ and ☕.</Footer>
       </Layout>
     );
   }
