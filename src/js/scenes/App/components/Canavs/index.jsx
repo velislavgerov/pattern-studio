@@ -1,24 +1,24 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { fabric } from 'fabric';
 
 import {
   Row,
   Col,
-  Card,
-  List,
-  Input,
-  Avatar,
 } from 'antd';
 
 import { getBase64 } from 'js/misc';
 import Controls from '../Controls';
 
-
-
-fabric.Object.prototype.centeredScaling = true;
-fabric.Object.prototype.centeredRotation = true;
-fabric.Object.prototype.transparentCorners = false;
-fabric.Object.prototype.objectCaching = true;
+fabric.Object.prototype.set({
+  cornerStyle: 'square',
+  centeredScaling: true,
+  centeredRotation: true,
+  transparentCorners: false,
+  objectCaching: false,
+  lockScalingFlip: true,
+  originX: 'center',
+  originY: 'center',
+})
 
 class Canvas extends React.Component {
   state = {
@@ -28,7 +28,6 @@ class Canvas extends React.Component {
 
   handleFileListChange = ({ fileList }) => this.setState({ fileList });
   handleFileListRemoveItem = ({ item }) => {
-    console.log(item.uid);
     this.setState((state) => {
       return {
         fileList: state.fileList.filter((file) => file.uid !== item.uid),
@@ -54,30 +53,89 @@ class Canvas extends React.Component {
     const canvas = this.canvas;
     if (item == null) return;
 
-    console.log(item);
     const previewImage = (item.preview != null) ? item.preview : await getBase64(item.originFileObj);
 
     fabric.loadSVGFromURL(previewImage, function(objects, options) {
       const svg = fabric.util.groupSVGElements(objects, options);
-      canvas.add(svg.setControlsVisibility({
+      svg.set({
+        id: 'svg_' + Math.random().toString(36).substr(2, 9)
+      });
+      canvas.add(svg.set({
+          top: 300,
+          left: 300,
+        }).setControlsVisibility({
+          mt: false,
+          mb: false,
+          ml: false,
+          mr: false,
+        })
+      );
+      canvas.requestRenderAll();
+    });
+  }
+
+  handleSwapSVGElement = async ({ item }) => {
+    const canvas = this.canvas;
+    if (item == null) return;
+
+    const activeObj = canvas.getActiveObject();
+    if (activeObj == null) return;
+    
+    const previewImage = (item.preview != null) ? item.preview : await getBase64(item.originFileObj);
+    fabric.loadSVGFromURL(previewImage, function(objects, options) {
+      const svg = fabric.util.groupSVGElements(objects, options);
+    
+      canvas.getObjects().filter(obj => obj.id === activeObj.id).map(obj => {
+        canvas.remove(obj);
+        svg.clone(clone => {
+          canvas.add(clone.set({
+            id: obj.id,
+            top: obj.top,
+            left: obj.left,
+            scaleX: obj.scaleX,
+            scaleY: obj.scaleY,
+          }).setControlsVisibility({
+            mt: false,
+            mb: false,
+            ml: false,
+            mr: false,
+          }));
+
+          if (JSON.stringify(obj) === JSON.stringify(activeObj)) {
+            canvas.setActiveObject(clone);
+          };
+        });
+      });
+      
+      canvas.requestRenderAll();
+    });
+  }
+
+  handleAddTextElement = () => {
+    const canvas = this.canvas;
+    const textObj = new fabric.IText('Text', {
+        left: 300,
+        top: 300,
+      }).setControlsVisibility({
         mt: false,
         mb: false,
         ml: false,
         mr: false,
-      }));
-      canvas.requestRenderAll();
-    });
+      }
+    );
+    canvas.add(textObj);
+    canvas.setActiveObject(textObj);
+    canvas.requestRenderAll();
   }
 
   handleClone = () => {
     const canvas = this.canvas;
     const activeObjs = canvas.getActiveObject();
 
-    console.log('activeObjs:', activeObjs)
-
     if (activeObjs != null) {
       activeObjs.clone((clone) => {
         canvas.add(clone.set({
+          id: activeObjs.id,
           top: clone.top + 10,
           let: clone.left + 10,
         }).setControlsVisibility({
@@ -112,6 +170,12 @@ class Canvas extends React.Component {
       }, () => {
         canvas.renderAll();
     });
+  }
+
+  handleBgColorChange = (color) => {
+    const canvas = this.canvas;
+    canvas.backgroundColor = color.hex;
+    canvas.requestRenderAll();
   }
 
   handleSelectAll = () => {
@@ -179,8 +243,6 @@ class Canvas extends React.Component {
         <Col md={24} lg={12}>
           <Controls
             id="canvas-controls"
-            canvas={this.canvas}
-            onPreview={this.handlePreview}
             onSelectAll={this.handleSelectAll}
             onSetBackground={this.handleSetBackground}
             onAddSVGElement={this.handleAddSVGElement}
@@ -192,6 +254,9 @@ class Canvas extends React.Component {
             fileList={this.state.fileList}
             onFileListChange={this.handleFileListChange}
             onFileListRemoveItem={this.handleFileListRemoveItem}
+            onBgColorChange={this.handleBgColorChange}
+            onAddTextElement={this.handleAddTextElement}
+            onSwapSVGElement={this.handleSwapSVGElement}
           />
         </Col>
       </Row>

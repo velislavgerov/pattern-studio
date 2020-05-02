@@ -22,7 +22,7 @@ class App extends React.Component {
     return (
       <Layout>
         <Header className="header">
-          <div class="logo">
+          <div className="logo">
             <Title level={3} style={{ color: '#fff' }}>Pattern Studio</Title>
           </div>
         </Header>
