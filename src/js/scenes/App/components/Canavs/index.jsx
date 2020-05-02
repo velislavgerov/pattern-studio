@@ -5,10 +5,15 @@ import {
   Row,
   Col,
   Card,
+  List,
+  Input,
+  Avatar,
 } from 'antd';
 
 import { getBase64 } from 'js/misc';
 import Controls from '../Controls';
+
+
 
 fabric.Object.prototype.centeredScaling = true;
 fabric.Object.prototype.centeredRotation = true;
@@ -21,9 +26,15 @@ class Canvas extends React.Component {
     previewImage: null,
   };
 
-  canvasObjects = [];
-
   handleFileListChange = ({ fileList }) => this.setState({ fileList });
+  handleFileListRemoveItem = ({ item }) => {
+    console.log(item.uid);
+    this.setState((state) => {
+      return {
+        fileList: state.fileList.filter((file) => file.uid !== item.uid),
+      };
+    });
+  };
 
   handlePreview = async file => {
     if (!file.url && !file.preview) {
@@ -32,8 +43,6 @@ class Canvas extends React.Component {
 
     this.setState({
       previewImage: file.url || file.preview,
-    }, () => {
-      console.log('previewImage changed:', this.state.previewImage);
     });
   };
 
@@ -41,10 +50,12 @@ class Canvas extends React.Component {
     this.canvas.clear();
   }
 
-  handleAddSVGElement = () => {
+  handleAddSVGElement = async ({ item }) => {
     const canvas = this.canvas;
-    const { previewImage } = this.state;
-    if (previewImage == null) return;
+    if (item == null) return;
+
+    console.log(item);
+    const previewImage = (item.preview != null) ? item.preview : await getBase64(item.originFileObj);
 
     fabric.loadSVGFromURL(previewImage, function(objects, options) {
       const svg = fabric.util.groupSVGElements(objects, options);
@@ -54,7 +65,7 @@ class Canvas extends React.Component {
         ml: false,
         mr: false,
       }));
-      canvas.renderAll();
+      canvas.requestRenderAll();
     });
   }
 
@@ -75,6 +86,7 @@ class Canvas extends React.Component {
           ml: false,
           mr: false,
         }));
+        canvas.requestRenderAll();
       });
     }
   }
@@ -104,6 +116,8 @@ class Canvas extends React.Component {
 
   handleSelectAll = () => {
     const canvas = this.canvas;
+
+    if (!canvas.getObjects().length) return;
 
     canvas.discardActiveObject();
     const sel = new fabric.ActiveSelection(canvas.getObjects(), {
@@ -151,20 +165,21 @@ class Canvas extends React.Component {
 
   componentDidMount() {
     this.canvas = new fabric.Canvas('canvas');
-    this.canvas.setHeight(450);
-    this.canvas.setWidth(450);
+    this.canvas.setHeight(600);
+    this.canvas.setWidth(600);
   };
 
   render () {
     return (
       <Row gutter={16}>
-        <Col span={12}>
+        <Col md={24} lg={12}>
           <h4>Canvas</h4>
           <canvas id="canvas"></canvas>
         </Col>
-        <Col span={12}>
+        <Col md={24} lg={12}>
           <Controls
             id="canvas-controls"
+            canvas={this.canvas}
             onPreview={this.handlePreview}
             onSelectAll={this.handleSelectAll}
             onSetBackground={this.handleSetBackground}
@@ -176,6 +191,7 @@ class Canvas extends React.Component {
             onGroup={this.handleGroup}
             fileList={this.state.fileList}
             onFileListChange={this.handleFileListChange}
+            onFileListRemoveItem={this.handleFileListRemoveItem}
           />
         </Col>
       </Row>

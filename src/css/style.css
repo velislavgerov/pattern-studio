@@ -1,21 +1,33 @@
 #root {
   height: 100%;
+  background: #001529;
 }
 
-.app-layout {
-  height: 100%;
+.logo {
+  margin: 16px 24px 16px 0;
+  float: left;
 }
 
-.app-layout-sub-header-background {
-  background: #fff;
-}
- 
 .app-layout-background {
   background: #fff;
 }
 
 .app-layout-content-sider-background {
   background: #fff;
+}
+
+.app-layout-footer {
+  background: #001529;
+  color: #fff;
+  text-align: center;
+}
+
+.app-layout-footer>a {
+  color: #ff4d4f;
+}
+
+.app-layout-footer>a:hover {
+  color: #ff7875;
 }
 
 #canvas {
