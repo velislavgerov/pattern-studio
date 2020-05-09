@@ -1,12 +1,14 @@
 import React from 'react';
 import { fabric } from 'fabric';
+import { changeDpiDataUrl } from 'changedpi';
 
 import {
   Row,
   Col,
+  Modal,
 } from 'antd';
 
-import { getBase64 } from 'js/misc';
+import { getBase64, download, downloadDataURL } from 'js/misc';
 import Controls from '../Controls';
 
 fabric.Object.prototype.set({
@@ -23,10 +25,18 @@ fabric.Object.prototype.set({
 class Canvas extends React.Component {
   state = {
     fileList: [],
-    previewImage: null,
+    previewImage: '',
+    previewVisible: false,
+  };
+
+  componentDidMount() {
+    this.canvas = new fabric.Canvas('canvas');
+    this.canvas.setHeight(600);
+    this.canvas.setWidth(600);
   };
 
   handleFileListChange = ({ fileList }) => this.setState({ fileList });
+
   handleFileListRemoveItem = ({ item }) => {
     this.setState((state) => {
       return {
@@ -35,13 +45,68 @@ class Canvas extends React.Component {
     });
   };
 
-  handlePreview = async file => {
-    if (!file.url && !file.preview) {
-      file.preview = await getBase64(file.originFileObj);
-    }
+  handlePreview = () => {
+    const canvas = this.canvas;
 
-    this.setState({
-      previewImage: file.url || file.preview,
+    const pngDataURL = canvas.toDataURL({
+      format: 'png',
+      multiplier: 1
+    });
+    const svgDataURL = 'data:image/svg+xml;utf8,' + encodeURIComponent(this.canvas.toSVG());
+
+    const previewCanvas = new fabric.StaticCanvas();
+    previewCanvas.setHeight(9449);
+    previewCanvas.setWidth(7087);
+
+    previewCanvas.backgroundColor = new fabric.Pattern({
+        source: pngDataURL,
+        repeat: 'repeat',
+      }, () => {
+        previewCanvas.renderAll();
+        
+        //const previewCanvasSvgURL = 'data:image/svg+xml;utf8,' + encodeURIComponent(previewCanvas.toSVG());
+        const previewCanvasPNGURL = previewCanvas.toDataURL({
+          format: 'png',
+          multiplier: 1
+        });
+
+        this.setState({
+          previewImage: changeDpiDataUrl(previewCanvasPNGURL, 300),
+          previewVisible: true,
+        })
+    });
+  };
+
+  handleCancel = () => this.setState({ previewVisible: false });
+
+
+  handleDownloadForPrint = () => {
+    const canvas = this.canvas;
+
+    const pngDataURL = canvas.toDataURL({
+      format: 'png',
+      multiplier: 1
+    });
+
+    const svgDataURL = 'data:image/svg+xml;utf8,' + encodeURIComponent(this.canvas.toSVG());
+
+    const previewCanvas = new fabric.StaticCanvas();
+    previewCanvas.setHeight(9449);
+    previewCanvas.setWidth(7087);
+
+    previewCanvas.backgroundColor = new fabric.Pattern({
+        source: pngDataURL,
+        repeat: 'repeat',
+      }, () => {
+        previewCanvas.renderAll();
+        
+        //const previewCanvasSvgURL = 'data:image/svg+xml;utf8,' + encodeURIComponent(previewCanvas.toSVG());
+        const previewCanvasPNGURL = previewCanvas.toDataURL({
+          format: 'png',
+          multiplier: 1
+        });
+
+        downloadDataURL(changeDpiDataUrl(previewCanvasPNGURL, 300), 'pattern.png');
     });
   };
 
@@ -227,39 +292,58 @@ class Canvas extends React.Component {
     }
   }
 
-  componentDidMount() {
-    this.canvas = new fabric.Canvas('canvas');
-    this.canvas.setHeight(600);
-    this.canvas.setWidth(600);
+  handleImport = ({ file }) => {
+    console.log(file);
+    this.canvas.loadFromJSON(file.json)
+  };
+
+  handleExport = () => {
+    download(JSON.stringify(this.canvas.toJSON()), 'pattern.json', 'application/json');
   };
 
   render () {
+    const { previewVisible, previewImage } = this.state;
     return (
-      <Row gutter={16}>
-        <Col md={24} lg={12}>
-          <h4>Canvas</h4>
-          <canvas id="canvas"></canvas>
-        </Col>
-        <Col md={24} lg={12}>
-          <Controls
-            id="canvas-controls"
-            onSelectAll={this.handleSelectAll}
-            onSetBackground={this.handleSetBackground}
-            onAddSVGElement={this.handleAddSVGElement}
-            onClear={this.handleClear}
-            onClone={this.handleClone}
-            onRemove={this.handleRemove}
-            onDiscard={this.handleDiscard}
-            onGroup={this.handleGroup}
-            fileList={this.state.fileList}
-            onFileListChange={this.handleFileListChange}
-            onFileListRemoveItem={this.handleFileListRemoveItem}
-            onBgColorChange={this.handleBgColorChange}
-            onAddTextElement={this.handleAddTextElement}
-            onSwapSVGElement={this.handleSwapSVGElement}
-          />
-        </Col>
-      </Row>
+      <div>
+        <Row gutter={16}>
+          <Col md={24} lg={12}>
+            <h4>Canvas</h4>
+            <canvas id="canvas"></canvas>
+            <canvas id="preview-canvas"></canvas>
+          </Col>
+          <Col md={24} lg={12}>
+            <Controls
+              id="canvas-controls"
+              onSelectAll={this.handleSelectAll}
+              onSetBackground={this.handleSetBackground}
+              onAddSVGElement={this.handleAddSVGElement}
+              onClear={this.handleClear}
+              onClone={this.handleClone}
+              onRemove={this.handleRemove}
+              onDiscard={this.handleDiscard}
+              onGroup={this.handleGroup}
+              fileList={this.state.fileList}
+              onFileListChange={this.handleFileListChange}
+              onFileListRemoveItem={this.handleFileListRemoveItem}
+              onBgColorChange={this.handleBgColorChange}
+              onAddTextElement={this.handleAddTextElement}
+              onSwapSVGElement={this.handleSwapSVGElement}
+              onPreview={this.handlePreview}
+              onImport={this.handleImport}
+              onExport={this.handleExport}
+              onDownloadForPrint={this.handleDownloadForPrint}
+            />
+          </Col>
+        </Row>
+        <Modal
+          visible={previewVisible}
+          title="Preview"
+          footer={null}
+          onCancel={this.handleCancel}
+        >
+          <img alt="preview" style={{ width: '100%' }} src={previewImage} />
+        </Modal>
+      </div>
     );
   }
 };

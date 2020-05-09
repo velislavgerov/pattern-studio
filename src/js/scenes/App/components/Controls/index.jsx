@@ -1,5 +1,5 @@
 import React from 'react';
-import { getBase64 } from 'js/misc';
+import { getBase64, getTextFile } from 'js/misc';
 
 import {
   Form,
@@ -28,6 +28,10 @@ import {
   FieldStringOutlined,
   PictureOutlined,
   TableOutlined,
+  FileImageOutlined,
+  ImportOutlined,
+  ExportOutlined,
+  PrinterOutlined,
 } from '@ant-design/icons';
 
 import { CirclePicker } from 'react-color';
@@ -47,7 +51,40 @@ class Controls extends React.Component {
       >
         <Row gutter={[16, 16]}>
           <Col span={24}>
-            <h4>Canvas Controls</h4>
+            <h4>Canvas Controls</h4>   
+            <Upload
+              multiple={false}
+              accept="application/json"
+              transformFile={async file => {
+                file.preview = await getTextFile(file);
+                file.json = JSON.parse(file.preview);
+              }}
+              onChange={this.props.onImport}
+              showUploadList={false}
+            >
+              <Button
+                style={{ marginRight: 8 }}
+                icon={<ImportOutlined />}
+              >
+                Import
+              </Button>
+            </Upload>
+            <Button
+              onClick={this.props.onExport}
+              style={{ marginRight: 8 }}
+              icon={<ExportOutlined />}
+            >
+              Export
+            </Button>
+            <Button
+              onClick={this.props.onDownloadForPrint}
+              style={{ marginRight: 8 }}
+              icon={<PrinterOutlined />}
+            >
+              Download for Print
+            </Button>
+          </Col>
+          <Col span={24}>
             <Button
               type="dashed"
               onClick={this.props.onSelectAll}
