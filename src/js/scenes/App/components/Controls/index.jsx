@@ -77,6 +77,13 @@ class Controls extends React.Component {
               Export
             </Button>
             <Button
+              onClick={this.props.onPreview}
+              style={{ marginRight: 8 }}
+              icon={<FileImageOutlined />}
+            >
+              Preview
+            </Button>
+            <Button
               onClick={this.props.onDownloadForPrint}
               style={{ marginRight: 8 }}
               icon={<PrinterOutlined />}

@@ -6,6 +6,8 @@ import {
   Row,
   Col,
   Modal,
+  Slider,
+  InputNumber,
 } from 'antd';
 
 import { getBase64, download, downloadDataURL } from 'js/misc';
@@ -27,6 +29,7 @@ class Canvas extends React.Component {
     fileList: [],
     previewImage: '',
     previewVisible: false,
+    scaleValue: 1.00,
   };
 
   componentDidMount() {
@@ -37,6 +40,15 @@ class Canvas extends React.Component {
 
   handleFileListChange = ({ fileList }) => this.setState({ fileList });
 
+  handleScaleValueChange = value => {
+    if (isNaN(value)) {
+      return;
+    }
+    this.setState({
+      scaleValue: value,
+    }, this.handlePreview());
+  }
+
   handleFileListRemoveItem = ({ item }) => {
     this.setState((state) => {
       return {
@@ -46,32 +58,27 @@ class Canvas extends React.Component {
   };
 
   handlePreview = () => {
-    const canvas = this.canvas;
+    const { scaleValue } = this.state;
 
-    const pngDataURL = canvas.toDataURL({
-      format: 'png',
-      multiplier: 1
-    });
-    const svgDataURL = 'data:image/svg+xml;utf8,' + encodeURIComponent(this.canvas.toSVG());
+    const svg = this.canvas.toSVG({
+      width: this.canvas.width * scaleValue,
+      height: this.canvas.height * scaleValue,
+    })
+    const svgDataURL = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
 
     const previewCanvas = new fabric.StaticCanvas();
-    previewCanvas.setHeight(9449);
-    previewCanvas.setWidth(7087);
+    previewCanvas.setHeight(1015);
+    previewCanvas.setWidth(724);
 
     previewCanvas.backgroundColor = new fabric.Pattern({
-        source: pngDataURL,
+        source: svgDataURL,
         repeat: 'repeat',
       }, () => {
         previewCanvas.renderAll();
+        const previewCanvasSvgURL = 'data:image/svg+xml;utf8,' + encodeURIComponent(previewCanvas.toSVG());
         
-        //const previewCanvasSvgURL = 'data:image/svg+xml;utf8,' + encodeURIComponent(previewCanvas.toSVG());
-        const previewCanvasPNGURL = previewCanvas.toDataURL({
-          format: 'png',
-          multiplier: 1
-        });
-
         this.setState({
-          previewImage: changeDpiDataUrl(previewCanvasPNGURL, 300),
+          previewImage: previewCanvasSvgURL,
           previewVisible: true,
         })
     });
@@ -81,26 +88,23 @@ class Canvas extends React.Component {
 
 
   handleDownloadForPrint = () => {
-    const canvas = this.canvas;
+    const { scaleValue } = this.state;
 
-    const pngDataURL = canvas.toDataURL({
-      format: 'png',
-      multiplier: 1
-    });
-
-    const svgDataURL = 'data:image/svg+xml;utf8,' + encodeURIComponent(this.canvas.toSVG());
+    const svg = this.canvas.toSVG({
+      width: this.canvas.width * scaleValue,
+      height: this.canvas.height * scaleValue,
+    })
+    const svgDataURL = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
 
     const previewCanvas = new fabric.StaticCanvas();
     previewCanvas.setHeight(9449);
     previewCanvas.setWidth(7087);
 
     previewCanvas.backgroundColor = new fabric.Pattern({
-        source: pngDataURL,
+        source: svgDataURL,
         repeat: 'repeat',
       }, () => {
         previewCanvas.renderAll();
-        
-        //const previewCanvasSvgURL = 'data:image/svg+xml;utf8,' + encodeURIComponent(previewCanvas.toSVG());
         const previewCanvasPNGURL = previewCanvas.toDataURL({
           format: 'png',
           multiplier: 1
@@ -302,14 +306,13 @@ class Canvas extends React.Component {
   };
 
   render () {
-    const { previewVisible, previewImage } = this.state;
+    const { previewVisible, previewImage, scaleValue } = this.state;
     return (
       <div>
         <Row gutter={16}>
           <Col md={24} lg={12}>
             <h4>Canvas</h4>
             <canvas id="canvas"></canvas>
-            <canvas id="preview-canvas"></canvas>
           </Col>
           <Col md={24} lg={12}>
             <Controls
@@ -341,7 +344,30 @@ class Canvas extends React.Component {
           footer={null}
           onCancel={this.handleCancel}
         >
-          <img alt="preview" style={{ width: '100%' }} src={previewImage} />
+          <Row gutter={[16, 16]}>
+            <Col span={12}>
+              <Slider
+                min={0}
+                max={2}
+                onChange={this.handleScaleValueChange}
+                value={typeof scaleValue === 'number' ? scaleValue : 0}
+                step={0.01}
+              />
+            </Col>
+            <Col span={4}>
+              <InputNumber
+                min={0}
+                max={2}
+                style={{ margin: '0 16px' }}
+                step={0.01}
+                value={scaleValue}
+                onChange={this.handleScaleValueChange}
+              />
+            </Col>
+          </Row>
+          <Row>
+            <img alt="preview" style={{ width: '100%' }} src={previewImage} />
+          </Row>
         </Modal>
       </div>
     );
