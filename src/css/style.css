@@ -33,3 +33,7 @@
 #canvas {
   border: 1px solid #f0f0f0;
 }
+
+.color-picker-popover>.ant-popover-content>.ant-popover-inner>.ant-popover-inner-content {
+  padding: 0;
+}

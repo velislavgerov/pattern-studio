@@ -11,6 +11,9 @@ import {
   Upload,
   Tabs,
   Radio,
+  Popover,
+  Space,
+  Tag,
 } from 'antd';
 
 import {
@@ -32,16 +35,59 @@ import {
   ImportOutlined,
   ExportOutlined,
   PrinterOutlined,
+  PlusCircleOutlined
 } from '@ant-design/icons';
 
-import { CirclePicker } from 'react-color';
+import { SketchPicker, CirclePicker } from 'react-color';
 
 const {
   TabPane
 } = Tabs;
 
 class Controls extends React.Component {
+  state = {
+    color: '#ffffff',
+    colors: ['#ffffff'],
+  };
+
+  handleChangeColor = (color) => {
+    this.setState({
+      color: color.hex.toLowerCase(),
+    })
+  }
+
+  handleAddColor = () => {
+    this.setState(state => {
+      if (state.colors.includes(state.color)) return;
+      return {
+        colors: [...state.colors, state.color],
+      }
+    });
+  }
+
+  handleDeleteColor = (colorIndex) => {
+    this.setState(state => {
+      if (state.colors[colorIndex] == null) return;
+      let colors = [...state.colors];
+      return {
+        colors,
+      };
+    });
+  }
+
+  handleSelectColor = (colorIndex) => {
+    const { colors } = this.state;
+    const color = colors[colorIndex];
+    if (color == null) return;
+    this.props.onBgColorChange(color);
+  }
+
   render () {
+    const {
+      color,
+      colors
+    } = this.state;
+
     return (
       <Form
         layout="vertical"
@@ -160,24 +206,57 @@ class Controls extends React.Component {
                 key={1}
                 closable={false}
               >
-                <Col span={24}>
-                  <Form.Item
-                    name="background-type"
-                    label="Type"
-                  >
-                    <Radio.Group defaultValue="color" buttonStyle="outlined" style={{ marginBottom: 6 }}>
-                      <Radio.Button value="color"><BgColorsOutlined /> Color</Radio.Button>
-                      <Radio.Button value="pattern" disabled><TableOutlined /> Pattern</Radio.Button>
-                    </Radio.Group>
-                  </Form.Item>
-                  <div style={{ padding: 6 }}>
-                    <CirclePicker
-                      width="100%"
-                      onChangeComplete={this.props.onBgColorChange}
-                      colors={["#f44336","#e91e63","#9c27b0","#673ab7","#3f51b5","#2196f3","#03a9f4","#00bcd4","#009688","#4caf50","#8bc34a","#cddc39","#ffeb3b","#ffc107","#ff9800","#ff5722","#795548","#607d8b","#ffffff","#000000"]}
-                    />
-                  </div>
-                </Col>
+                <Row gutter={[16, 16]}>
+                  <Col span={24}>
+                    <Form.Item
+                      name="background-type"
+                      label="Type"
+                    >
+                      <Radio.Group defaultValue="color" buttonStyle="outlined" style={{ marginBottom: 6 }}>
+                        <Radio.Button value="color"><BgColorsOutlined /> Color</Radio.Button>
+                        <Radio.Button value="pattern" disabled><TableOutlined /> Pattern</Radio.Button>
+                      </Radio.Group>
+                    </Form.Item>
+                  </Col>
+                </Row>
+                <Row gutter={[16, 16]}>
+                  <Col span={24}>
+                    <Space>
+                      <Popover
+                        overlayClassName="color-picker-popover"
+                        overlayStyle={{antPopoverContent: { padding: 0 }}}
+                        placement="bottom"
+                        content={<SketchPicker color={color}
+                        onChangeComplete={this.handleChangeColor}/>}
+                        trigger="click"
+                      >
+                        <Button icon={<BgColorsOutlined />}>Pick</Button>
+                      </Popover>
+                      <Button
+                        icon={<PlusCircleOutlined />}
+                        onClick={this.handleAddColor}
+                        disabled={colors.includes(color.toLowerCase())}
+                      >
+                        Add
+                      </Button>
+                    </Space>
+                  </Col>
+                </Row>
+                <Row gutter={[16, 16]}>
+                  <Col span={24}>
+                    {colors.map((color, index) => {
+                      return <Tag
+                        closable
+                        onClose={() => this.handleDeleteColor(index)}
+                        onClick={() => this.handleSelectColor(index)}
+                        key={`${index}-${color}`}
+                        color={color.toLowerCase() === '#ffffff' ? null : color}
+                      >
+                        {color}
+                      </Tag>
+                    })}
+                  </Col>
+                </Row>
               </TabPane>
               <TabPane
                  tab={

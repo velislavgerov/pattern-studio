@@ -21,14 +21,14 @@
     "studio"
   ],
   "author": "Velislav Gerov <vgerov93@gmail.com>",
-  "license": "ISC",
+  "license": "UNLICENSED",
   "bugs": {
     "url": "https://github.com/thunderstruck47/pattern-studio/issues"
   },
   "homepage": "https://github.com/thunderstruck47/pattern-studio#readme",
   "dependencies": {
     "@ant-design/icons": "^4.1.0",
-    "antd": "^4.2.3",
+    "antd": "^4.2.5",
     "changedpi": "^1.0.4",
     "fabric": "^3.6.3",
     "react": "^16.13.1",

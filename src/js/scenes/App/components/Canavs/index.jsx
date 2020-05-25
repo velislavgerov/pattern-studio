@@ -243,7 +243,7 @@ class Canvas extends React.Component {
 
   handleBgColorChange = (color) => {
     const canvas = this.canvas;
-    canvas.backgroundColor = color.hex;
+    canvas.backgroundColor = color;
     canvas.requestRenderAll();
   }
 
