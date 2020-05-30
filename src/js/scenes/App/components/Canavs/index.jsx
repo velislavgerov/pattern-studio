@@ -30,6 +30,8 @@ class Canvas extends React.Component {
     previewImage: '',
     previewVisible: false,
     scaleValue: 1.00,
+    backgroundColors: [],
+    backgroundPatterns: [],
   };
 
   componentDidMount() {
@@ -85,7 +87,6 @@ class Canvas extends React.Component {
   };
 
   handleCancel = () => this.setState({ previewVisible: false });
-
 
   handleDownloadForPrint = () => {
     const { scaleValue } = this.state;
@@ -240,8 +241,36 @@ class Canvas extends React.Component {
         canvas.renderAll();
     });
   }
+  
+  handleAddBackgroundColor = (color) => {
+    this.setState(state => {
+      if (state.backgroundColors.includes(color)) return;
+      return {
+        backgroundColors: [...state.backgroundColors, color],
+      }
+    });
+  }
 
-  handleBgColorChange = (color) => {
+  handleDeleteBackgroundColor = (index) => {
+    this.setState(state => {
+      if (state.backgroundColors[index] == null) return;
+      let backgroundColors = [...state.backgroundColors];
+      backgroundColors.splice(index, 1);
+      return {
+        backgroundColors,
+      };
+    });
+  }
+
+  handleSelectColor = (index) => {
+    const { backgroundColors } = this.state;
+    const color = backgroundColors[index];
+    if (color == null) return;
+
+    this.handleBackgroundColorChange(color);
+  }
+
+  handleBackgroundColorChange = (color) => {
     const canvas = this.canvas;
     canvas.backgroundColor = color;
     canvas.requestRenderAll();
@@ -297,16 +326,25 @@ class Canvas extends React.Component {
   }
 
   handleImport = ({ file }) => {
-    console.log(file);
     this.canvas.loadFromJSON(file.json)
+    this.setState({
+      backgroundColors: file.json.backgroundColors,
+    })
   };
 
   handleExport = () => {
-    download(JSON.stringify(this.canvas.toJSON()), 'pattern.json', 'application/json');
+    const { backgroundColors, backgroundPatterns } = this.state;
+    const canvas = this.canvas;
+
+    console.log(canvas);
+    canvas.backgroundColors = backgroundColors;
+    
+    console.log(canvas);
+    download(JSON.stringify(this.canvas.toJSON(['backgroundColors'])), 'pattern.json', 'application/json');
   };
 
   render () {
-    const { previewVisible, previewImage, scaleValue } = this.state;
+    const { previewVisible, previewImage, scaleValue, backgroundColors, backgroundPatterns } = this.state;
     return (
       <div>
         <Row gutter={16}>
@@ -328,13 +366,17 @@ class Canvas extends React.Component {
               fileList={this.state.fileList}
               onFileListChange={this.handleFileListChange}
               onFileListRemoveItem={this.handleFileListRemoveItem}
-              onBgColorChange={this.handleBgColorChange}
+              onBackgroundColorChange={this.handleBackgroundColorChange}
               onAddTextElement={this.handleAddTextElement}
               onSwapSVGElement={this.handleSwapSVGElement}
               onPreview={this.handlePreview}
               onImport={this.handleImport}
               onExport={this.handleExport}
               onDownloadForPrint={this.handleDownloadForPrint}
+              onAddBackgroundColor={this.handleAddBackgroundColor}
+              onDeleteBackgroundColor={this.handleDeleteBackgroundColor}
+              backgroundColors={backgroundColors}
+              backgroundPatterns={backgroundPatterns}
             />
           </Col>
         </Row>

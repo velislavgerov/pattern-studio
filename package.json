@@ -27,7 +27,7 @@
   },
   "homepage": "https://github.com/thunderstruck47/pattern-studio#readme",
   "dependencies": {
-    "@ant-design/icons": "^4.1.0",
+    "@ant-design/icons": "^4.2.1",
     "antd": "^4.2.5",
     "changedpi": "^1.0.4",
     "fabric": "^3.6.3",
@@ -36,9 +36,9 @@
     "react-dom": "^16.13.1"
   },
   "devDependencies": {
-    "@babel/core": "^7.9.6",
-    "@babel/plugin-proposal-class-properties": "^7.8.3",
-    "@babel/preset-react": "^7.9.4",
+    "@babel/core": "^7.10.1",
+    "@babel/plugin-proposal-class-properties": "^7.10.1",
+    "@babel/preset-react": "^7.10.1",
     "babel-loader": "^8.1.0",
     "css-loader": "^3.5.3",
     "html-loader": "^1.1.0",

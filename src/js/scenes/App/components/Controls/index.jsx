@@ -75,17 +75,16 @@ class Controls extends React.Component {
     });
   }
 
-  handleSelectColor = (colorIndex) => {
+  handleSelectColor = (index) => {
     const { colors } = this.state;
-    const color = colors[colorIndex];
+    const color = colors[index];
     if (color == null) return;
-    this.props.onBgColorChange(color);
+    this.props.onBackgroundColorChange(color);
   }
 
   render () {
     const {
       color,
-      colors
     } = this.state;
 
     return (
@@ -234,8 +233,8 @@ class Controls extends React.Component {
                       </Popover>
                       <Button
                         icon={<PlusCircleOutlined />}
-                        onClick={this.handleAddColor}
-                        disabled={colors.includes(color.toLowerCase())}
+                        onClick={() => this.props.onAddBackgroundColor(color)}
+                        disabled={this.props.backgroundColors.includes(color.toLowerCase())}
                       >
                         Add
                       </Button>
@@ -244,11 +243,11 @@ class Controls extends React.Component {
                 </Row>
                 <Row gutter={[16, 16]}>
                   <Col span={24}>
-                    {colors.map((color, index) => {
+                    {this.props.backgroundColors.map((color, index) => {
                       return <Tag
                         closable
-                        onClose={() => this.handleDeleteColor(index)}
-                        onClick={() => this.handleSelectColor(index)}
+                        onClose={() => this.props.onDeleteBackgroundColor(index)}
+                        onClick={() => this.props.onBackgroundColorChange(color)}
                         key={`${index}-${color}`}
                         color={color.toLowerCase() === '#ffffff' ? null : color}
                       >
