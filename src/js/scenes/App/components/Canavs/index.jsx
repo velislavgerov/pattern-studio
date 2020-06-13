@@ -32,6 +32,13 @@ class Canvas extends React.Component {
     scaleValue: 1.00,
     backgroundColors: [],
     backgroundPatterns: [],
+    groups: [{
+      title: 'Background',
+      type: 'background',
+      colors: [],
+      patterns: [],
+      closable: false,
+    }],
   };
 
   componentDidMount() {
@@ -39,6 +46,20 @@ class Canvas extends React.Component {
     this.canvas.setHeight(600);
     this.canvas.setWidth(600);
   };
+
+  handleAddGroup = ({ title, type, content }) => {
+    this.setState(state => {
+      return {
+        groups: [...state.groups, {
+          title,
+          type,
+          content,
+          sources: [],
+          closable: true,
+        }],
+      };
+    });
+  }
 
   handleFileListChange = ({ fileList }) => this.setState({ fileList });
 
@@ -336,15 +357,21 @@ class Canvas extends React.Component {
     const { backgroundColors, backgroundPatterns } = this.state;
     const canvas = this.canvas;
 
-    console.log(canvas);
     canvas.backgroundColors = backgroundColors;
     
-    console.log(canvas);
     download(JSON.stringify(this.canvas.toJSON(['backgroundColors'])), 'pattern.json', 'application/json');
   };
 
   render () {
-    const { previewVisible, previewImage, scaleValue, backgroundColors, backgroundPatterns } = this.state;
+    const {
+      previewVisible,
+      previewImage,
+      scaleValue,
+      backgroundColors,
+      backgroundPatterns,
+      groups,
+    } = this.state;
+    
     return (
       <div>
         <Row gutter={16}>
@@ -377,6 +404,8 @@ class Canvas extends React.Component {
               onDeleteBackgroundColor={this.handleDeleteBackgroundColor}
               backgroundColors={backgroundColors}
               backgroundPatterns={backgroundPatterns}
+              groups={groups}
+              onAddGroup={this.handleAddGroup}
             />
           </Col>
         </Row>

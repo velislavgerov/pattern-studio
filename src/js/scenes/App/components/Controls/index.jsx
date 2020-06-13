@@ -14,6 +14,7 @@ import {
   Popover,
   Space,
   Tag,
+  Modal,
 } from 'antd';
 
 import {
@@ -47,46 +48,53 @@ const {
 class Controls extends React.Component {
   state = {
     color: '#ffffff',
-    colors: ['#ffffff'],
+    visible: false,
   };
 
   handleChangeColor = (color) => {
     this.setState({
       color: color.hex.toLowerCase(),
+    });
+  }
+
+  handleAddTextGroup = () => {
+    // todo promise resolve Modal
+    this.props.onAddGroup({
+      title: 'Text',
+      type: 'text',
+    });
+
+    this.setState({
+      visible: false,
+    });
+  }
+
+  handleAddStickerGroup = () => {
+    this.setState({
+      visible: false,
+    });
+
+    this.props.onAddGroup({
+      title: 'Sticker',
+      type: 'sticker',
+    });
+  }
+  
+  onEdit = (targetKey, action) => {
+    this[action](targetKey);
+  };
+
+  add = () => {
+    this.setState({
+      visible: true,
     })
-  }
-
-  handleAddColor = () => {
-    this.setState(state => {
-      if (state.colors.includes(state.color)) return;
-      return {
-        colors: [...state.colors, state.color],
-      }
-    });
-  }
-
-  handleDeleteColor = (colorIndex) => {
-    this.setState(state => {
-      if (state.colors[colorIndex] == null) return;
-      let colors = [...state.colors];
-      return {
-        colors,
-      };
-    });
-  }
-
-  handleSelectColor = (index) => {
-    const { colors } = this.state;
-    const color = colors[index];
-    if (color == null) return;
-    this.props.onBackgroundColorChange(color);
   }
 
   render () {
     const {
       color,
     } = this.state;
-
+    console.log(this.props.groups);
     return (
       <Form
         layout="vertical"
@@ -194,146 +202,176 @@ class Controls extends React.Component {
             <Tabs
               type="editable-card"
               tabPosition="top"
+              onEdit={this.onEdit}
             >
-              <TabPane
-                tab={
-                  <span>
-                    <PictureOutlined />
-                    Background
-                  </span>
-                }
-                key={1}
-                closable={false}
-              >
-                <Row gutter={[16, 16]}>
-                  <Col span={24}>
-                    <Form.Item
-                      name="background-type"
-                      label="Type"
+              {this.props.groups.map((group, index) => {
+                if (group.type === 'background') {
+                  return (
+                    <TabPane
+                      tab={
+                        <span>
+                          <PictureOutlined />
+                          {group.title}
+                        </span>
+                      }
+                      key={index}
+                      closable={group.closable}
                     >
-                      <Radio.Group defaultValue="color" buttonStyle="outlined" style={{ marginBottom: 6 }}>
-                        <Radio.Button value="color"><BgColorsOutlined /> Color</Radio.Button>
-                        <Radio.Button value="pattern" disabled><TableOutlined /> Pattern</Radio.Button>
-                      </Radio.Group>
-                    </Form.Item>
-                  </Col>
-                </Row>
-                <Row gutter={[16, 16]}>
-                  <Col span={24}>
-                    <Space>
-                      <Popover
-                        overlayClassName="color-picker-popover"
-                        overlayStyle={{antPopoverContent: { padding: 0 }}}
-                        placement="bottom"
-                        content={<SketchPicker color={color}
-                        onChangeComplete={this.handleChangeColor}/>}
-                        trigger="click"
-                      >
-                        <Button icon={<BgColorsOutlined />}>Pick</Button>
-                      </Popover>
-                      <Button
-                        icon={<PlusCircleOutlined />}
-                        onClick={() => this.props.onAddBackgroundColor(color)}
-                        disabled={this.props.backgroundColors.includes(color.toLowerCase())}
-                      >
-                        Add
-                      </Button>
-                    </Space>
-                  </Col>
-                </Row>
-                <Row gutter={[16, 16]}>
-                  <Col span={24}>
-                    {this.props.backgroundColors.map((color, index) => {
-                      return <Tag
-                        closable
-                        onClose={() => this.props.onDeleteBackgroundColor(index)}
-                        onClick={() => this.props.onBackgroundColorChange(color)}
-                        key={`${index}-${color}`}
-                        color={color.toLowerCase() === '#ffffff' ? null : color}
-                      >
-                        {color}
-                      </Tag>
-                    })}
-                  </Col>
-                </Row>
-              </TabPane>
-              <TabPane
-                 tab={
-                  <span>
-                    <CrownOutlined />
-                    Sticker Group
-                  </span>
-                }
-                key={2}
-                closable={true}
-              >
-                <Col span={24}>
-                  <Form.Item
-                    name="sources"
-                    label="Sources"
-                  >
-                    <Upload
-                      multiple
-                      accept="image/svg+xml"
-                      fileList={this.props.fileList}
-                      transformFile={async file => {
-                        file.preview = await getBase64(file);
-                      }}
-                      onChange={this.props.onFileListChange}
-                      showUploadList={false}
+                      <Row gutter={[16, 16]}>
+                        <Col span={24}>
+                          <Form.Item
+                            name="background-type"
+                            label="Type"
+                          >
+                            <Radio.Group defaultValue="color" buttonStyle="outlined" style={{ marginBottom: 6 }}>
+                              <Radio.Button value="color"><BgColorsOutlined /> Color</Radio.Button>
+                              <Radio.Button value="pattern" disabled><TableOutlined /> Pattern</Radio.Button>
+                            </Radio.Group>
+                          </Form.Item>
+                        </Col>
+                      </Row>
+                      <Row gutter={[16, 16]}>
+                        <Col span={24}>
+                          <Space>
+                            <Popover
+                              overlayClassName="color-picker-popover"
+                              overlayStyle={{antPopoverContent: { padding: 0 }}}
+                              placement="bottom"
+                              content={<SketchPicker color={color}
+                              onChangeComplete={this.handleChangeColor}/>}
+                              trigger="click"
+                            >
+                              <Button icon={<BgColorsOutlined />}>Pick</Button>
+                            </Popover>
+                            <Button
+                              icon={<PlusCircleOutlined />}
+                              onClick={() => this.props.onAddBackgroundColor(color)}
+                              disabled={this.props.backgroundColors.includes(color.toLowerCase())}
+                            >
+                              Add
+                            </Button>
+                          </Space>
+                        </Col>
+                      </Row>
+                      <Row gutter={[16, 16]}>
+                        <Col span={24}>
+                          {this.props.backgroundColors.map((color, index) => {
+                            return <Tag
+                              closable
+                              onClose={() => this.props.onDeleteBackgroundColor(index)}
+                              onClick={() => this.props.onBackgroundColorChange(color)}
+                              key={`${index}-${color}`}
+                              color={color.toLowerCase() === '#ffffff' ? null : color}
+                            >
+                              {color}
+                            </Tag>
+                          })}
+                        </Col>
+                      </Row>
+                    </TabPane>
+                  );
+                } else if (group.type === 'sticker') {
+                  return (
+                    <TabPane
+                      tab={
+                        <span>
+                          <CrownOutlined />
+                          {group.title}
+                        </span>
+                      }
+                      key={index}
+                      closable={group.closable}
                     >
-                      <Button>
-                        <UploadOutlined /> Load File(s)
-                      </Button>
-                    </Upload>
-                  </Form.Item>
-                </Col>
-                <Col span={24}>
-                  <List
-                    grid={{ column: 6, gutter: 6 }}
-                    dataSource={this.props.fileList}
-                    renderItem={item => {
-                      return (
-                        <List.Item>
-                          <Card
-                            selected
-                            style={{width: 'auto', height: 'auto'}}
-                            bodyStyle={{ display: 'none' }}
-                            hoverable
-                            actions={[
-                              <FileAddOutlined key="select" onClick={() => this.props.onAddSVGElement({ item })} />,
-                              <RetweetOutlined key="swap" onClick={() => this.props.onSwapSVGElement({ item })}/>,
-                              <DeleteOutlined key="delete" onClick={() => this.props.onFileListRemoveItem({ item })} />,
-                            ]}
-                            cover={<img style={{ maxHeight: 128, padding: 6 }} src={item.preview}/>}
-                          />
-                        </List.Item>
-                      );
-                    }}
-                  />
-                </Col>
-              </TabPane>
-              <TabPane
-                tab={
-                  <span>
-                    <FieldStringOutlined />
-                    Text Group
-                  </span>
+                      <Col span={24}>
+                        <Form.Item
+                          name="sources"
+                          label="Sources"
+                        >
+                          <Upload
+                            multiple
+                            accept="image/svg+xml"
+                            fileList={this.props.fileList}
+                            transformFile={async file => {
+                              file.preview = await getBase64(file);
+                            }}
+                            onChange={this.props.onFileListChange}
+                            showUploadList={false}
+                          >
+                            <Button>
+                              <UploadOutlined /> Load File(s)
+                            </Button>
+                          </Upload>
+                        </Form.Item>
+                      </Col>
+                      <Col span={24}>
+                        <List
+                          grid={{ column: 6, gutter: 6 }}
+                          dataSource={this.props.fileList}
+                          renderItem={item => {
+                            return (
+                              <List.Item>
+                                <Card
+                                  selected
+                                  style={{width: 'auto', height: 'auto'}}
+                                  bodyStyle={{ display: 'none' }}
+                                  hoverable
+                                  actions={[
+                                    <FileAddOutlined key="select" onClick={() => this.props.onAddSVGElement({ item })} />,
+                                    <RetweetOutlined key="swap" onClick={() => this.props.onSwapSVGElement({ item })}/>,
+                                    <DeleteOutlined key="delete" onClick={() => this.props.onFileListRemoveItem({ item })} />,
+                                  ]}
+                                  cover={<img style={{ maxHeight: 128, padding: 6 }} src={item.preview}/>}
+                                />
+                              </List.Item>
+                            );
+                          }}
+                        />
+                      </Col>
+                    </TabPane>
+                  );
+                } else if (group.type === 'text') {
+                  return (
+                    <TabPane
+                      tab={
+                        <span>
+                          <FieldStringOutlined />
+                          {group.title}
+                        </span>
+                      }
+                      key={index}
+                      closable={group.closable}
+                    >
+                      <Col span={24}>
+                        <Button
+                          type="primary"
+                          icon={<FileAddOutlined />}
+                          onClick={this.props.onAddTextElement}
+                        >
+                          Add Text
+                        </Button>
+                      </Col>
+                    </TabPane>
+                  );
                 }
-                key={3}
-                closable={true}
-              >
-                <Col span={24}>
-                  <Button
-                    type="primary"
-                    icon={<FileAddOutlined />}
-                    onClick={this.props.onAddTextElement}
-                  >
-                    Add Text
-                  </Button>
-                </Col>
-              </TabPane>
+              })}
             </Tabs>
+            <Modal
+              title="Add Element Group"
+              visible={this.state.visible}
+              width={256}
+              bodyStyle={{
+                display: 'none',
+              }}
+              footer={[
+                <Button key="sticker" onClick={this.handleAddStickerGroup}>
+                  Sticker Group
+                </Button>,
+                <Button key="text" onClick={this.handleAddTextGroup}>
+                  Text Group
+                </Button>,
+              ]}
+            >
+            </Modal>
           </Col>
         </Row>
       </Form>
