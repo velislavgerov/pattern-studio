@@ -90,6 +90,10 @@ class Controls extends React.Component {
     })
   }
 
+  remove = targetKey => {
+    this.props.onRemoveGroup({ groupIndex: targetKey });
+  }
+
   render () {
     const {
       color,
@@ -203,6 +207,7 @@ class Controls extends React.Component {
               type="editable-card"
               tabPosition="top"
               onEdit={this.onEdit}
+              onChange={this.props.onGroupIndexChange}
             >
               {this.props.groups.map((group, index) => {
                 if (group.type === 'background') {

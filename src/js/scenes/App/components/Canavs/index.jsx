@@ -1,4 +1,5 @@
 import React from 'react';
+import update from 'immutability-helper';
 import { fabric } from 'fabric';
 import { changeDpiDataUrl } from 'changedpi';
 
@@ -10,7 +11,7 @@ import {
   InputNumber,
 } from 'antd';
 
-import { getBase64, download, downloadDataURL } from 'js/misc';
+import { getBase64, download, downloadDataURL, uuidv4 } from 'js/misc';
 import Controls from '../Controls';
 
 fabric.Object.prototype.set({
@@ -24,6 +25,15 @@ fabric.Object.prototype.set({
   originY: 'center',
 })
 
+fabric.Object.prototype.toObject = (function(toObject) {
+  return function() {
+    return fabric.util.object.extend(toObject.call(this), {
+      id: this.id,
+      guuid: this.guuid,
+    });
+  };
+})(fabric.Object.prototype.toObject);
+
 class Canvas extends React.Component {
   state = {
     fileList: [],
@@ -32,11 +42,14 @@ class Canvas extends React.Component {
     scaleValue: 1.00,
     backgroundColors: [],
     backgroundPatterns: [],
+    groupIndex: 0,
     groups: [{
+      guuid: uuidv4(),
       title: 'Background',
       type: 'background',
       colors: [],
       patterns: [],
+      sources: [],
       closable: false,
     }],
   };
@@ -51,14 +64,69 @@ class Canvas extends React.Component {
     this.setState(state => {
       return {
         groups: [...state.groups, {
+          guuid: uuidv4(),
           title,
           type,
           content,
           sources: [],
-          closable: true,
+          closable: true, // Better to be inside component logic?
         }],
       };
     });
+  }
+
+  handleRemoveGroup = ({ groupIndex }) => {
+    this.setState(state => {
+      const { groups } = state;
+      if (groups[groupIndex] != null) {
+        return {
+          groups: update(groups, {
+            $splice: [[groupIndex, 1]],
+          }),
+          groupIndex: (groupIndex == groups.length - 1) ? groupIndex - 1 : state.groupIndex
+        };
+      }
+    });
+  }
+
+  handleGroupIndexChange = (key) => this.setState({groupIndex: Number.parseInt(key)});
+
+  handleGroupSourcesChange = ({ fileList }) => {
+    this.setState(state => {
+      let groups = [ ...state.groups ];
+      
+      if (groups[state.groupIndex] != null) {
+        const group = {
+          ...groups[state.groupIndex],
+          sources: fileList,
+        };
+
+        groups[state.groupIndex] = group;
+        
+        return {
+          groups,
+        };
+      }
+    })
+  }
+
+  handleGroupSourcesRemoveItem = ({ item }) => {
+    this.setState(state => {
+      let groups = [ ...state.groups ];
+      
+      if (groups[state.groupIndex] != null) {
+        const group = {
+          ...groups[state.groupIndex],
+          sources: groups[state.groupIndex].sources.filter((file) => file.uid !== item.uid),
+        };
+
+        groups[state.groupIndex] = group;
+        
+        return {
+          groups,
+        };
+      }
+    })
   }
 
   handleFileListChange = ({ fileList }) => this.setState({ fileList });
@@ -142,14 +210,19 @@ class Canvas extends React.Component {
 
   handleAddSVGElement = async ({ item }) => {
     const canvas = this.canvas;
-    if (item == null) return;
+    const { groups, groupIndex } = this.state;
 
+    if (item == null) return;
+    if ( groups[groupIndex] == null) return;
+
+    const guuid = groups[groupIndex].guuid;
     const previewImage = (item.preview != null) ? item.preview : await getBase64(item.originFileObj);
 
     fabric.loadSVGFromURL(previewImage, function(objects, options) {
       const svg = fabric.util.groupSVGElements(objects, options);
       svg.set({
-        id: 'svg_' + Math.random().toString(36).substr(2, 9)
+        id: 'svg_' + Math.random().toString(36).substr(2, 9),
+        guuid,
       });
       canvas.add(svg.set({
           top: 300,
@@ -161,6 +234,46 @@ class Canvas extends React.Component {
           mr: false,
         })
       );
+      canvas.requestRenderAll();
+    });
+  }
+
+  handleSwapGroupSource = async ({ item }) => {
+    const canvas = this.canvas;
+    const { groups, groupIndex } = this.state;
+
+    if (item == null) return;
+    if (groups[groupIndex] == null) return;
+
+    const activeObj = canvas.getActiveObject();
+    
+    const previewImage = (item.preview != null) ? item.preview : await getBase64(item.originFileObj);
+    fabric.loadSVGFromURL(previewImage, function(objects, options) {
+      const svg = fabric.util.groupSVGElements(objects, options);
+    
+      canvas.getObjects().filter(obj => obj.guuid === groups[groupIndex].guuid).map(obj => {
+        canvas.remove(obj);
+        svg.clone(clone => {
+          canvas.add(clone.set({
+            id: obj.id,
+            guuid: obj.guuid,
+            top: obj.top,
+            left: obj.left,
+            scaleX: obj.scaleX,
+            scaleY: obj.scaleY,
+          }).setControlsVisibility({
+            mt: false,
+            mb: false,
+            ml: false,
+            mr: false,
+          }));
+
+          if (activeObj != null && JSON.stringify(obj) === JSON.stringify(activeObj)) {
+            canvas.setActiveObject(clone);
+          };
+        });
+      });
+      
       canvas.requestRenderAll();
     });
   }
@@ -181,6 +294,7 @@ class Canvas extends React.Component {
         svg.clone(clone => {
           canvas.add(clone.set({
             id: obj.id,
+            guuid: obj.guuid,
             top: obj.top,
             left: obj.left,
             scaleX: obj.scaleX,
@@ -227,6 +341,7 @@ class Canvas extends React.Component {
       activeObjs.clone((clone) => {
         canvas.add(clone.set({
           id: activeObjs.id,
+          guuid: activeObjs.guuid,
           top: clone.top + 10,
           let: clone.left + 10,
         }).setControlsVisibility({
@@ -350,16 +465,19 @@ class Canvas extends React.Component {
     this.canvas.loadFromJSON(file.json)
     this.setState({
       backgroundColors: file.json.backgroundColors,
+      groups: file.json.groups,
+      groupIndex: 0,
     })
   };
 
   handleExport = () => {
-    const { backgroundColors, backgroundPatterns } = this.state;
+    const { backgroundColors, backgroundPatterns, groups } = this.state;
     const canvas = this.canvas;
 
     canvas.backgroundColors = backgroundColors;
+    canvas.groups = groups;
     
-    download(JSON.stringify(this.canvas.toJSON(['backgroundColors'])), 'pattern.json', 'application/json');
+    download(JSON.stringify(this.canvas.toJSON(['backgroundColors', 'groups'])), 'pattern.json', 'application/json');
   };
 
   render () {
@@ -370,6 +488,7 @@ class Canvas extends React.Component {
       backgroundColors,
       backgroundPatterns,
       groups,
+      groupIndex,
     } = this.state;
     
     return (
@@ -390,12 +509,12 @@ class Canvas extends React.Component {
               onRemove={this.handleRemove}
               onDiscard={this.handleDiscard}
               onGroup={this.handleGroup}
-              fileList={this.state.fileList}
-              onFileListChange={this.handleFileListChange}
-              onFileListRemoveItem={this.handleFileListRemoveItem}
+              fileList={groups[groupIndex].sources}
+              onFileListChange={this.handleGroupSourcesChange}
+              onFileListRemoveItem={this.handleGroupSourcesRemoveItem}
               onBackgroundColorChange={this.handleBackgroundColorChange}
               onAddTextElement={this.handleAddTextElement}
-              onSwapSVGElement={this.handleSwapSVGElement}
+              onSwapSVGElement={this.handleSwapGroupSource}
               onPreview={this.handlePreview}
               onImport={this.handleImport}
               onExport={this.handleExport}
@@ -406,6 +525,8 @@ class Canvas extends React.Component {
               backgroundPatterns={backgroundPatterns}
               groups={groups}
               onAddGroup={this.handleAddGroup}
+              onRemoveGroup={this.handleRemoveGroup}
+              onGroupIndexChange={this.handleGroupIndexChange}
             />
           </Col>
         </Row>
