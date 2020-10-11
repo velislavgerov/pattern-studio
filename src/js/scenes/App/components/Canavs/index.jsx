@@ -34,6 +34,24 @@ fabric.Object.prototype.toObject = (function(toObject) {
   };
 })(fabric.Object.prototype.toObject);
 
+fabric.Textbox.prototype.toObject = (function(toObject) {
+  return function() {
+    return fabric.util.object.extend(toObject.call(this), {
+      id: this.id,
+      guuid: this.guuid,
+      text: this.text,
+      textAlign: this.textAlign,
+      textBackgroundColor: this.textBackgroundColor,
+      backgroundColor: this.backgroundColor,
+      fill: this.fill,
+      fontFamily: this.fontFamily,
+      fontStyle: this.fontStyle,
+      fontWeight: this.fontWeight,
+      fontSize: this.fontSize,
+    });
+  };
+})(fabric.Textbox.prototype.toObject);
+
 class Canvas extends React.Component {
   state = {
     fileList: [],
@@ -70,6 +88,7 @@ class Canvas extends React.Component {
           content,
           sources: [],
           closable: true, // Better to be inside component logic?
+          values: {},
         }],
       };
     });
@@ -91,23 +110,17 @@ class Canvas extends React.Component {
 
   handleGroupIndexChange = (key) => this.setState({groupIndex: Number.parseInt(key)});
 
-  handleGroupSourcesChange = ({ fileList }) => {
-    this.setState(state => {
-      let groups = [ ...state.groups ];
-      
-      if (groups[state.groupIndex] != null) {
-        const group = {
-          ...groups[state.groupIndex],
-          sources: fileList,
-        };
-
-        groups[state.groupIndex] = group;
-        
-        return {
-          groups,
-        };
-      }
-    })
+  handleGroupSourcesChange = ({ fileList, index }) => {
+    this.setState(state => update(state, {
+        groups: {
+          [index]: {
+            sources: {
+              $set: fileList
+            }
+          }
+        }
+      })
+    );
   }
 
   handleGroupSourcesRemoveItem = ({ item }) => {
@@ -316,21 +329,28 @@ class Canvas extends React.Component {
     });
   }
 
-  handleAddTextElement = () => {
+  handleAddTextElement = (values) => {
     const canvas = this.canvas;
-    const textObj = new fabric.IText('Text', {
-        left: 300,
-        top: 300,
-      }).setControlsVisibility({
-        mt: false,
-        mb: false,
-        ml: false,
-        mr: false,
-      }
-    );
+    console.log(canvas);
+    const textObj = new fabric.Textbox(values.text, {
+      left: 300,
+      top: 300,
+      ...values,
+    });
     canvas.add(textObj);
     canvas.setActiveObject(textObj);
     canvas.requestRenderAll();
+  }
+
+  handleUpdateTextElement = (values) => {
+    const canvas = this.canvas;
+    if (values.guuid == null) return;
+    
+    canvas.getObjects().filter(obj => obj.guuid === values.guuid).map(obj => {
+      obj.set(values);
+      canvas.requestRenderAll();
+    });
+    
   }
 
   handleClone = () => {
@@ -476,6 +496,23 @@ class Canvas extends React.Component {
 
     canvas.backgroundColors = backgroundColors;
     canvas.groups = groups;
+    groups.filter(group => group.type === 'text').map(group => {
+      const match = canvas.getObjects().filter(obj => obj.guuid === group.guuid);
+      return {
+        ...group,
+        values: match.length ? {
+          text: match[0].text,
+          textAlign: match[0].textAlign,
+          textBackgroundColor: match[0].textBackgroundColor,
+          backgroundColor: match[0].backgroundColor,
+          fill: match[0].fill,
+          fontFamily: match[0].fontFamily,
+          fontStyle: match[0].fontStyle,
+          fontWeight: match[0].fontWeight,
+          fontSize: match[0].fontSize,
+        } : {},
+      }
+    })
     
     download(JSON.stringify(this.canvas.toJSON(['backgroundColors', 'groups'])), 'pattern.json', 'application/json');
   };
@@ -509,7 +546,6 @@ class Canvas extends React.Component {
               onRemove={this.handleRemove}
               onDiscard={this.handleDiscard}
               onGroup={this.handleGroup}
-              fileList={groups[groupIndex].sources}
               onFileListChange={this.handleGroupSourcesChange}
               onFileListRemoveItem={this.handleGroupSourcesRemoveItem}
               onBackgroundColorChange={this.handleBackgroundColorChange}
@@ -527,6 +563,7 @@ class Canvas extends React.Component {
               onAddGroup={this.handleAddGroup}
               onRemoveGroup={this.handleRemoveGroup}
               onGroupIndexChange={this.handleGroupIndexChange}
+              onUpdateTextElement={this.handleUpdateTextElement}
             />
           </Col>
         </Row>

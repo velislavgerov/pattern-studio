@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { getBase64, getTextFile } from 'js/misc';
 
 import {
@@ -15,6 +15,8 @@ import {
   Space,
   Tag,
   Modal,
+  Input,
+  InputNumber,
 } from 'antd';
 
 import {
@@ -49,12 +51,19 @@ class Controls extends React.Component {
   state = {
     color: '#ffffff',
     visible: false,
+
   };
 
   handleChangeColor = (color) => {
     this.setState({
       color: color.hex.toLowerCase(),
     });
+  }
+
+  handleAddText = (values) => {
+    console.log('handleAddText', values);
+    Object.keys(values).forEach(key => values[key] === undefined && delete values[key]);
+    this.props.onAddTextElement(values);
   }
 
   handleAddTextGroup = () => {
@@ -100,12 +109,7 @@ class Controls extends React.Component {
     } = this.state;
     console.log(this.props.groups);
     return (
-      <Form
-        layout="vertical"
-        hideRequiredMark
-        ref={this.formRef}
-        name="form-control-ref"
-      >
+      <div>
         <Row gutter={[16, 16]}>
           <Col span={24}>
             <h4>Canvas Controls</h4>   
@@ -295,11 +299,11 @@ class Controls extends React.Component {
                           <Upload
                             multiple
                             accept="image/svg+xml"
-                            fileList={this.props.fileList}
+                            fileList={group.sources}
                             transformFile={async file => {
                               file.preview = await getBase64(file);
                             }}
-                            onChange={this.props.onFileListChange}
+                            onChange={({ fileList }) => this.props.onFileListChange({ fileList, index })}
                             showUploadList={false}
                           >
                             <Button>
@@ -311,7 +315,7 @@ class Controls extends React.Component {
                       <Col span={24}>
                         <List
                           grid={{ column: 6, gutter: 6 }}
-                          dataSource={this.props.fileList}
+                          dataSource={group.sources}
                           renderItem={item => {
                             return (
                               <List.Item>
@@ -347,13 +351,12 @@ class Controls extends React.Component {
                       closable={group.closable}
                     >
                       <Col span={24}>
-                        <Button
-                          type="primary"
-                          icon={<FileAddOutlined />}
-                          onClick={this.props.onAddTextElement}
-                        >
-                          Add Text
-                        </Button>
+                        <TextForm
+                          group={group}
+                          guuid={group.guuid}
+                          onAddText={this.handleAddText}
+                          onUpdateTextElement={this.props.onUpdateTextElement}
+                        />
                       </Col>
                     </TabPane>
                   );
@@ -379,9 +382,100 @@ class Controls extends React.Component {
             </Modal>
           </Col>
         </Row>
-      </Form>
+      </div>
     );
   }
+}
+
+const TextForm = (props) => {
+  const [form] = Form.useForm();
+  console.log(props.group)
+
+  const handleValuesChange = (values) => props.onUpdateTextElement({ guuid: props.guuid, ...values });
+
+  return (
+    <Form
+      form={form}
+      name="add-text"
+      labelCol={{
+        span: 6
+      }}
+      wrapperCol={{
+        span: 18
+      }}
+      onFinish={props.onAddText}
+      onValuesChange={handleValuesChange}
+      initialValues={{
+        ...props.group.values,
+        guuid: props.guuid,
+      }}
+    >
+      <Form.Item hidden label="Group ID" name="guuid">
+        <Input hidden value={props.guuid}/>
+      </Form.Item>
+      <Form.Item label="Text" name="text"
+        rules={[
+          {
+            required: true,
+          },
+        ]}
+      >
+        <Input.TextArea />
+      </Form.Item>
+      <Form.Item label="Text Align" name="textAlign">
+        <Radio.Group defaultValue="left">
+          <Radio.Button value="left">left</Radio.Button>
+          <Radio.Button value="center">center</Radio.Button>
+          <Radio.Button value="right">right</Radio.Button>
+          <Radio.Button value="justify">justify</Radio.Button>
+          <Radio.Button value="justify-left">justify-left</Radio.Button>
+          <Radio.Button value="justify-center">justify-center</Radio.Button>
+          <Radio.Button value="justify-right">justify-right</Radio.Button>
+        </Radio.Group>
+      </Form.Item>
+      <Form.Item label="Background Color" name="backgroundColor">
+        <Input type="color" allowClear />
+      </Form.Item>
+      <Form.Item label="Text Background Color" name="textBackgroundColor">
+        <Input type="color" allowClear />
+      </Form.Item>
+      <Form.Item label="Fill" name="fill">
+        <Input type="color" defaultValue="#ffffff" allowClear onChange={params => console.log(params)} />
+      </Form.Item>
+      <Form.Item label="Font Family" name="fontFamily">
+        <Input defaultValue='Times New Roman' />
+      </Form.Item>
+      <Form.Item label="Font Size," name="fontSize" rules={[{ type: 'number', min: 0 }]}>
+        <InputNumber defaultValue="40" />
+      </Form.Item>
+      <Form.Item label="Font Style" name="fontStyle">
+        <Radio.Group defaultValue='normal'>
+          <Radio.Button value="normal">Normal</Radio.Button>
+          <Radio.Button value="italic">Italic</Radio.Button>
+          <Radio.Button value="oblique">Oblique</Radio.Button>
+        </Radio.Group>
+      </Form.Item>
+      <Form.Item label="Font Weight" name="fontWeight">
+        <Radio.Group defaultValue='normal'>
+          <Radio.Button value="normal">Normal</Radio.Button>
+          <Radio.Button value="bold">Bold</Radio.Button>
+        </Radio.Group>
+      </Form.Item>
+      <Form.Item
+        wrapperCol={{
+          offset: 6,
+          span: 18,
+        }}
+      >
+        <Button
+          type="primary"
+          htmlType="submit"
+          icon={<FileAddOutlined />}
+        >
+          Add Text
+        </Button>
+      </Form.Item>
+    </Form>);
 }
 
 export default Controls;
