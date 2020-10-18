@@ -433,9 +433,6 @@ const TextForm = (props) => {
           <Radio.Button value="justify-right">justify-right</Radio.Button>
         </Radio.Group>
       </Form.Item>
-      <Form.Item label="Background Color" name="backgroundColor">
-        <Input type="color" allowClear />
-      </Form.Item>
       <Form.Item label="Text Background Color" name="textBackgroundColor">
         <Input type="color" allowClear />
       </Form.Item>

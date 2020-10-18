@@ -52,6 +52,128 @@ fabric.Textbox.prototype.toObject = (function(toObject) {
   };
 })(fabric.Textbox.prototype.toObject);
 
+const resizeHandler = (event) => {
+  if (event.target != null) {
+    event.target.canvas.getObjects()
+      .filter(obj => obj.id === event.target.id && obj !== event.target)
+      .map(obj => {
+        console.log(obj);
+        obj.set({
+          width: event.target.getScaledWidth(),
+          height: event.target.getScaledHeight(),
+          scaleX: event.target.scaleX,
+          scaleY: event.target.scaleY,
+        });
+        
+        event.target.canvas.requestRenderAll();
+      });
+  }
+
+  mirrorHandler(event);
+}
+
+const mirrorHandler = (event) => {
+  if (event.target != null) {
+    const coords = event.target.aCoords;
+
+    const min = 0;
+    const max = 600;
+
+    const tlOut = (coords.tl.x <= min || coords.tl.y <= min || coords.tl.x >= max || coords.tl.y >= max);
+    const trOut = (coords.tr.x <= min || coords.tr.y <= min || coords.tr.x >= max || coords.tr.y >= max);
+    const brOut = (coords.br.x <= min || coords.br.y <= min || coords.br.x >= max || coords.br.y >= max);
+    const blOut = (coords.bl.x <= min || coords.bl.y <= min || coords.bl.x >= max || coords.bl.y >= max);
+
+    const objs = event.target.canvas.getObjects().filter(obj => obj.id === event.target.id && obj !== event.target);
+    
+    let positions = [
+      {
+        top: event.target.top,
+        left: event.target.left,
+      }
+    ];
+
+    if (tlOut && blOut) {
+      positions.push({
+        top: event.target.top,
+        left: event.target.left + max,
+      });
+      console.log('tlbl');
+    }
+    
+    if (tlOut && trOut) {
+      positions = positions.concat(
+        positions.map(pos => {
+          return {
+            top: pos.top + max,
+            left: pos.left,
+          }
+        })
+      );
+      console.log('tltr');
+    }
+    
+    if (trOut && brOut) {
+      positions = positions.concat(
+        positions.map(pos => {
+          return {
+            top: pos.top,
+            left: pos.left - max,
+          }
+        })
+      );
+      console.log('trbr');
+    }
+    
+    if (brOut && blOut) {
+      positions = positions.concat(
+        positions.map(pos => {
+          return {
+            top: pos.top - max,
+            left: pos.left,
+          }
+        })
+      );
+      console.log('brbl');
+    }
+
+    positions.forEach((pos, i) => {
+      console.log(pos.top, pos.left);
+      
+      if (objs[i] != undefined) {
+        objs[i].set({
+          top: pos.top,
+          left: pos.left,
+        });
+      } else {
+        event.target.clone(clone => {
+          event.target.canvas.add(clone.set({
+            id: event.target.id,
+            guuid: event.target.guuid,
+            top: pos.top,
+            left: pos.left,
+            scaleX: event.target.scaleX,
+            scaleY: event.target.scaleY,
+          }).setControlsVisibility({
+            mt: false,
+            mb: false,
+            ml: false,
+            mr: false,
+          }));
+        });
+      }
+      
+      if (i === positions.length - 1) {
+        objs.slice(i + 1).map(obj => {
+          event.target.canvas.remove(obj);
+        });
+      };
+    });
+    
+    event.target.canvas.requestRenderAll();
+  }
+}
+
 class Canvas extends React.Component {
   state = {
     fileList: [],
@@ -76,6 +198,10 @@ class Canvas extends React.Component {
     this.canvas = new fabric.Canvas('canvas');
     this.canvas.setHeight(600);
     this.canvas.setWidth(600);
+    this.canvas.on({
+      'object:moving': mirrorHandler,
+      'object:scaling': resizeHandler,
+    });
   };
 
   handleAddGroup = ({ title, type, content }) => {
@@ -333,6 +459,7 @@ class Canvas extends React.Component {
     const canvas = this.canvas;
     console.log(canvas);
     const textObj = new fabric.Textbox(values.text, {
+      id: uuidv4(),
       left: 300,
       top: 300,
       ...values,
@@ -360,7 +487,7 @@ class Canvas extends React.Component {
     if (activeObjs != null) {
       activeObjs.clone((clone) => {
         canvas.add(clone.set({
-          id: activeObjs.id,
+          id: 'svg_' + Math.random().toString(36).substr(2, 9),
           guuid: activeObjs.guuid,
           top: clone.top + 10,
           let: clone.left + 10,
