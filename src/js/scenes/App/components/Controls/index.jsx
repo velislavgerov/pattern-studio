@@ -147,13 +147,6 @@ class Controls extends React.Component {
             >
               Preview
             </Button>
-            <Button
-              onClick={this.props.onDownloadForPrint}
-              style={{ marginRight: 8 }}
-              icon={<PrinterOutlined />}
-            >
-              Download for Print
-            </Button>
           </Col>
           <Col span={24}>
             <Button
@@ -422,18 +415,18 @@ const BackgroundGroup = (props) => {
                 <UploadOutlined /> Load File(s)
               </Button>
             </Upload>
-          </Space>
-        </Col>
-        <Col span={24}>
-          <Space>
-            <h4>Repeat</h4>
-            <Checkbox checked={repeat} onChange={handleChangeRepeat} />
             <h4>Width</h4>
             <InputNumber step={1} value={width} onChange={handleChangeWidth}/>
             <h4>Angle</h4>
             <InputNumber step={1} value={angle} onChange={handleChangeAngle}/>
             <h4>Padding</h4>
             <InputNumber step={1} value={padding} onChange={handleChangePadding}/>
+          </Space>
+        </Col>
+        <Col span={24}>
+          <Space>
+            <h4>Repeat</h4>
+            <Checkbox checked={repeat} onChange={handleChangeRepeat} />
             <h4>OffsetX</h4>
             <InputNumber step={1} value={offsetX} onChange={handleChangeOffsetX}/>
             <h4>OffsetY</h4>
@@ -445,7 +438,6 @@ const BackgroundGroup = (props) => {
             grid={{ column: 6, gutter: 6 }}
             dataSource={group.sources}
             renderItem={item => {
-              console.log(group);
               return (
                 <List.Item>
                   <Card

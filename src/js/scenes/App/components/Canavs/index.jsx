@@ -9,7 +9,12 @@ import {
   Modal,
   Slider,
   InputNumber,
+  Button,
 } from 'antd';
+
+import {
+  PrinterOutlined,
+} from '@ant-design/icons';
 
 import { getBase64, download, downloadDataURL, uuidv4 } from 'js/misc';
 import Controls from '../Controls';
@@ -320,7 +325,7 @@ class Canvas extends React.Component {
     }
     this.setState({
       scaleValue: value,
-    }, this.handlePreview());
+    }, () => this.handlePreview());
   }
 
   handleFileListRemoveItem = ({ item }) => {
@@ -334,24 +339,21 @@ class Canvas extends React.Component {
   handlePreview = () => {
     const { scaleValue } = this.state;
 
-    console.log(this.canvas);
-    const svg = this.canvas.toSVG({
-      width: this.canvas.width * scaleValue,
-      height: this.canvas.height * scaleValue,
-    })
-    const svgDataURL = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+    const dataURL = changeDpiDataUrl(this.canvas.toDataURL({
+      enableRetinaScaling: true,
+      multiplier: scaleValue,
+    }), 300);
 
     const previewCanvas = new fabric.StaticCanvas();
     previewCanvas.setHeight(1015);
     previewCanvas.setWidth(724);
 
     previewCanvas.backgroundColor = new fabric.Pattern({
-        source: svgDataURL,
+        source: dataURL,
         repeat: 'repeat',
       }, () => {
         previewCanvas.renderAll();
         const previewCanvasSvgURL = 'data:image/svg+xml;utf8,' + encodeURIComponent(previewCanvas.toSVG());
-        
         this.setState({
           previewImage: previewCanvasSvgURL,
           previewVisible: true,
@@ -363,25 +365,29 @@ class Canvas extends React.Component {
 
   handleDownloadForPrint = () => {
     const { scaleValue } = this.state;
-
-    const svg = this.canvas.toSVG({
-      width: this.canvas.width * scaleValue,
-      height: this.canvas.height * scaleValue,
-    })
-    const svgDataURL = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+    
+    downloadDataURL('data:image/svg+xml;utf8,' + encodeURIComponent(this.canvas.toSVG()), 'pattern.svg');
+    
+    const dataURL = this.canvas.toDataURL({
+      enableRetinaScaling: false,
+      multiplier: scaleValue,
+    });
 
     const previewCanvas = new fabric.StaticCanvas();
     previewCanvas.setHeight(9449);
     previewCanvas.setWidth(7087);
 
     previewCanvas.backgroundColor = new fabric.Pattern({
-        source: svgDataURL,
+        source: dataURL,
         repeat: 'repeat',
       }, () => {
         previewCanvas.renderAll();
         const previewCanvasPNGURL = previewCanvas.toDataURL({
+          enableRetinaScaling: false,
           format: 'png',
-          multiplier: 1
+          multiplier: 1,
+          width: 7087,
+          height: 9449,
         });
 
         downloadDataURL(changeDpiDataUrl(previewCanvasPNGURL, 300), 'pattern.png');
@@ -602,7 +608,7 @@ class Canvas extends React.Component {
       svg.setCoords();
       patternSourceCanvas.renderAll();
       canvas.backgroundColor = new fabric.Pattern({
-        source: patternSourceCanvas.getElement().toDataURL(),
+        source: patternSourceCanvas.toDataURL(),
         repeat: repeat ? 'repeat' : 'no-repeat',
         offsetX,
         offsetY
@@ -787,7 +793,6 @@ class Canvas extends React.Component {
               onPreview={this.handlePreview}
               onImport={this.handleImport}
               onExport={this.handleExport}
-              onDownloadForPrint={this.handleDownloadForPrint}
               onAddBackgroundColor={this.handleAddBackgroundColor}
               onDeleteBackgroundColor={this.handleDeleteBackgroundColor}
               backgroundColors={backgroundColors}
@@ -816,7 +821,7 @@ class Canvas extends React.Component {
                 step={0.01}
               />
             </Col>
-            <Col span={4}>
+            <Col span={6}>
               <InputNumber
                 min={0}
                 max={2}
@@ -825,6 +830,14 @@ class Canvas extends React.Component {
                 value={scaleValue}
                 onChange={this.handleScaleValueChange}
               />
+            </Col>
+            <Col span={6}>
+              <Button
+                onClick={this.handleDownloadForPrint}
+                icon={<PrinterOutlined />}
+              >
+                Download
+              </Button>
             </Col>
           </Row>
           <Row>
