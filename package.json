@@ -36,7 +36,8 @@
     "npm-check-updates": "^9.1.2",
     "react": "^17.0.1",
     "react-color": "^2.18.1",
-    "react-dom": "^17.0.1"
+    "react-dom": "^17.0.1",
+    "webpack-dev-server": "^3.11.0"
   },
   "devDependencies": {
     "@babel/core": "^7.12.3",
