@@ -1,0 +1,11 @@
+{
+  "short_name": "ptrns",
+  "name": "Pattern Studio",
+  "description": "N/A",
+  "icons": [],
+  "start_url": "",
+  "background_color": "",
+  "display": "standalone",
+  "scope": "",
+  "theme_color": ""
+}

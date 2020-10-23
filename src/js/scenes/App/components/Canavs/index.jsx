@@ -217,7 +217,18 @@ class Canvas extends React.Component {
       colors: [],
       patterns: [],
       sources: [],
-      closable: false,
+    }, {
+      guuid: uuidv4(),
+      title: 'Sticker',
+      type: 'sticker',
+      colors: [],
+      sources: [],
+    }, {
+      guuid: uuidv4(),
+      title: 'Text',
+      type: 'text',
+      colors: [],
+      sources: [],
     }],
   };
 
@@ -240,7 +251,6 @@ class Canvas extends React.Component {
           type,
           content,
           sources: [],
-          closable: true, // Better to be inside component logic?
           values: {},
         }],
       };
@@ -263,12 +273,12 @@ class Canvas extends React.Component {
 
   handleGroupIndexChange = (key) => this.setState({groupIndex: Number.parseInt(key)});
 
-  handleGroupSourcesChange = ({ fileList, index }) => {
+  handleFileUpload = ({ file, groupIndex }) => {
     this.setState(state => update(state, {
         groups: {
-          [index]: {
+          [groupIndex]: {
             sources: {
-              $set: fileList
+              $push: [ file ]
             }
           }
         }
@@ -700,7 +710,7 @@ class Canvas extends React.Component {
               onRemove={this.handleRemove}
               onDiscard={this.handleDiscard}
               onGroup={this.handleGroup}
-              onFileListChange={this.handleGroupSourcesChange}
+              onFileUpload={this.handleFileUpload}
               onFileListRemoveItem={this.handleGroupSourcesRemoveItem}
               onBackgroundColorChange={this.handleBackgroundColorChange}
               onAddTextElement={this.handleAddTextElement}

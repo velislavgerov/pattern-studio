@@ -108,7 +108,7 @@ class Controls extends React.Component {
     const {
       color,
     } = this.state;
-    console.log(this.props.groups);
+    
     return (
       <div>
         <Row gutter={[16, 16]}>
@@ -225,19 +225,12 @@ class Controls extends React.Component {
                         </span>
                       }
                       key={index}
-                      closable={group.closable}
+                      closable={group.type !== 'background'}
                     >
                       <Row gutter={[16, 16]}>
                         <Col span={24}>
-                          <Radio.Group defaultValue="color" buttonStyle="outlined" style={{ marginBottom: 6 }}>
-                            <Radio.Button value="color"><BgColorsOutlined /> Color</Radio.Button>
-                            <Radio.Button value="pattern" disabled><TableOutlined /> Pattern</Radio.Button>
-                          </Radio.Group>
-                        </Col>
-                      </Row>
-                      <Row gutter={[16, 16]}>
-                        <Col span={24}>
                           <Space>
+                            <h4>Colors</h4>
                             <Popover
                               overlayClassName="color-picker-popover"
                               overlayStyle={{antPopoverContent: { padding: 0 }}}
@@ -257,20 +250,66 @@ class Controls extends React.Component {
                             </Button>
                           </Space>
                         </Col>
+                        <Col span={24}>
+                          <Space>
+                            {this.props.backgroundColors.map((color, index) => {
+                              return <Tag
+                                closable
+                                onClose={() => this.props.onDeleteBackgroundColor(index)}
+                                onClick={() => this.props.onBackgroundColorChange(color)}
+                                key={`${index}-${color}`}
+                                color={color.toLowerCase() === '#ffffff' ? null : color}
+                              >
+                                {color}
+                              </Tag>
+                            })}
+                          </Space>
+                        </Col>
                       </Row>
                       <Row gutter={[16, 16]}>
                         <Col span={24}>
-                          {this.props.backgroundColors.map((color, index) => {
-                            return <Tag
-                              closable
-                              onClose={() => this.props.onDeleteBackgroundColor(index)}
-                              onClick={() => this.props.onBackgroundColorChange(color)}
-                              key={`${index}-${color}`}
-                              color={color.toLowerCase() === '#ffffff' ? null : color}
+                          <Space>
+                            <h4>Patterns</h4>
+                            <Upload
+                              multiple
+                              beforeUpload={async (file) => {
+                                file.preview = await getBase64(file);
+                                this.props.onFileUpload({file, groupIndex: index});
+                                return Promise.reject();
+                              }}
+                              accept="image/svg+xml"
+                              fileList={group.sources}
+                              showUploadList={false}
                             >
-                              {color}
-                            </Tag>
-                          })}
+                              <Button>
+                                <UploadOutlined /> Load File(s)
+                              </Button>
+                            </Upload>
+                          </Space>
+                        </Col>
+                        <Col span={24}>
+                          <List
+                            grid={{ column: 6, gutter: 6 }}
+                            dataSource={group.sources}
+                            renderItem={item => {
+                              return (
+                                <List.Item>
+                                  <Card
+                                    selected
+                                    style={{width: 'auto', height: 'auto'}}
+                                    bodyStyle={{ display: 'none' }}
+                                    hoverable
+                                    actions={[
+                                      <FileAddOutlined key="select" onClick={() => this.props.onAddSVGElement({ item })} />,
+                                      <RetweetOutlined key="swap" onClick={() => this.props.onSwapSVGElement({ item })}/>,
+                                      <DeleteOutlined key="delete" onClick={() => this.props.onFileListRemoveItem({ item })} />,
+                                    ]}
+                                    cover={<img style={{ maxHeight: 128, padding: 6 }} src={item.preview}/>}
+                                  />
+                                </List.Item>
+                              );
+                            }}
+                          />
                         </Col>
                       </Row>
                     </TabPane>
@@ -285,17 +324,18 @@ class Controls extends React.Component {
                         </span>
                       }
                       key={index}
-                      closable={group.closable}
+                      closable={group.type !== 'background'}
                     >
                       <Col span={24}>
                         <Upload
                           multiple
+                          beforeUpload={async (file) => {
+                            file.preview = await getBase64(file);
+                            this.props.onFileUpload({file, groupIndex: index});
+                            return Promise.reject();
+                          }}
                           accept="image/svg+xml"
                           fileList={group.sources}
-                          transformFile={async file => {
-                            file.preview = await getBase64(file);
-                          }}
-                          onChange={({ fileList }) => this.props.onFileListChange({ fileList, index })}
                           showUploadList={false}
                         >
                           <Button>
@@ -339,7 +379,7 @@ class Controls extends React.Component {
                         </span>
                       }
                       key={index}
-                      closable={group.closable}
+                      closable={group.type !== 'background'}
                     >
                       <Col span={24}>
                         <TextForm
@@ -397,6 +437,11 @@ const TextForm = (props) => {
       onFinish={props.onAddText}
       onValuesChange={handleValuesChange}
       initialValues={{
+        textAlign: 'left',
+        fontFamily: 'Times New Roman',
+        fontSize: 40,
+        fontStyle: 'normal',
+        fontWeight: 'normal',
         ...props.group.values,
         guuid: props.guuid,
       }}
@@ -414,7 +459,7 @@ const TextForm = (props) => {
         <Input.TextArea />
       </Form.Item>
       <Form.Item label="Text Align" name="textAlign">
-        <Radio.Group defaultValue="left">
+        <Radio.Group>
           <Radio.Button value="left">left</Radio.Button>
           <Radio.Button value="center">center</Radio.Button>
           <Radio.Button value="right">right</Radio.Button>
@@ -428,23 +473,23 @@ const TextForm = (props) => {
         <Input type="color" allowClear />
       </Form.Item>
       <Form.Item label="Fill" name="fill">
-        <Input type="color" defaultValue="#ffffff" allowClear onChange={params => console.log(params)} />
+        <Input type="color" allowClear onChange={params => console.log(params)} />
       </Form.Item>
       <Form.Item label="Font Family" name="fontFamily">
-        <Input defaultValue='Times New Roman' />
+        <Input />
       </Form.Item>
       <Form.Item label="Font Size," name="fontSize" rules={[{ type: 'number', min: 0 }]}>
-        <InputNumber defaultValue="40" />
+        <InputNumber />
       </Form.Item>
       <Form.Item label="Font Style" name="fontStyle">
-        <Radio.Group defaultValue='normal'>
+        <Radio.Group>
           <Radio.Button value="normal">Normal</Radio.Button>
           <Radio.Button value="italic">Italic</Radio.Button>
           <Radio.Button value="oblique">Oblique</Radio.Button>
         </Radio.Group>
       </Form.Item>
       <Form.Item label="Font Weight" name="fontWeight">
-        <Radio.Group defaultValue='normal'>
+        <Radio.Group >
           <Radio.Button value="normal">Normal</Radio.Button>
           <Radio.Button value="bold">Bold</Radio.Button>
         </Radio.Group>
