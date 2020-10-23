@@ -334,6 +334,7 @@ class Canvas extends React.Component {
   handlePreview = () => {
     const { scaleValue } = this.state;
 
+    console.log(this.canvas);
     const svg = this.canvas.toSVG({
       width: this.canvas.width * scaleValue,
       height: this.canvas.height * scaleValue,
@@ -572,7 +573,7 @@ class Canvas extends React.Component {
     }
   }
 
-  handleSetBackgroundPattern = ({file, color}) => {
+  handleSetBackgroundPattern = ({file, color, padding, width, offsetX, offsetY, angle, repeat}) => {
     const canvas = this.canvas;
     const { preview } = file;
     if (preview == null) return;
@@ -580,26 +581,31 @@ class Canvas extends React.Component {
       color = canvas.backgroundPattern != null ? canvas.backgroundPattern.color : canvas.backgroundColor;
     };
 
-    const padding = 100;
+    padding = (padding != null) ? padding : 0;
+    width = (width != null) ? width : 0;
+    offsetX = (offsetX != null) ? offsetX : 0;
+    offsetY = (offsetY != null) ? offsetY : 0;
+    angle = (angle != null) ? angle : 0;
 
     fabric.loadSVGFromURL(preview, function(objects, options) {
       const svg = fabric.util.groupSVGElements(objects, options);
-      console.log(svg)
-      svg.scaleToWidth(600);
+      svg.scaleToWidth(width);
+      svg.set('angle', angle);
       const patternSourceCanvas = new fabric.StaticCanvas();
       patternSourceCanvas.setBackgroundColor(color);
-      patternSourceCanvas.add(svg.set({
-        top: 300,
-        left: 300,
-      }));
+      patternSourceCanvas.add(svg);
       patternSourceCanvas.setDimensions({
         width: svg.getScaledWidth() + padding,
         height: svg.getScaledHeight() + padding
       });
+      patternSourceCanvas.centerObject(svg);
+      svg.setCoords();
       patternSourceCanvas.renderAll();
       canvas.backgroundColor = new fabric.Pattern({
-        source: patternSourceCanvas.toDataURL(),
-        repeat: 'repeat',
+        source: patternSourceCanvas.getElement().toDataURL(),
+        repeat: repeat ? 'repeat' : 'no-repeat',
+        offsetX,
+        offsetY
       }, () => {
         canvas.renderAll();
       });
@@ -608,6 +614,12 @@ class Canvas extends React.Component {
     canvas.backgroundPattern = {
       file,
       color,
+      width,
+      padding,
+      offsetX,
+      offsetY,
+      angle,
+      repeat
     };
   }
   

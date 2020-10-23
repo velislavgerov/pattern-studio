@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, Fragment } from 'react';
 import { getBase64, getTextFile } from 'js/misc';
 
 import {
@@ -17,6 +17,7 @@ import {
   Modal,
   Input,
   InputNumber,
+  Checkbox,
 } from 'antd';
 
 import {
@@ -228,94 +229,7 @@ class Controls extends React.Component {
                       key={index}
                       closable={group.type !== 'background'}
                     >
-                      <Row gutter={[16, 16]}>
-                        <Col span={24}>
-                          <Space>
-                            <h4>Colors</h4>
-                            <Popover
-                              overlayClassName="color-picker-popover"
-                              overlayStyle={{antPopoverContent: { padding: 0 }}}
-                              placement="bottom"
-                              content={<SketchPicker color={color}
-                              onChangeComplete={this.handleChangeColor}/>}
-                              trigger="click"
-                            >
-                              <Button icon={<BgColorsOutlined />}>Pick</Button>
-                            </Popover>
-                            <Button
-                              icon={<PlusCircleOutlined />}
-                              onClick={() => this.props.onAddBackgroundColor(color)}
-                              disabled={this.props.backgroundColors.includes(color.toLowerCase())}
-                            >
-                              Add
-                            </Button>
-                          </Space>
-                        </Col>
-                        <Col span={24}>
-                          <Space>
-                            {this.props.backgroundColors.map((color, index) => {
-                              return <Tag
-                                closable
-                                onClose={() => this.props.onDeleteBackgroundColor(index)}
-                                onClick={() => this.props.onBackgroundColorChange(color)}
-                                key={`${index}-${color}`}
-                                color={color.toLowerCase() === '#ffffff' ? null : color}
-                              >
-                                {color}
-                              </Tag>
-                            })}
-                          </Space>
-                        </Col>
-                      </Row>
-                      <Row gutter={[16, 16]}>
-                        <Col span={24}>
-                          <Space>
-                            <h4>Patterns</h4>
-                            <Upload
-                              multiple
-                              beforeUpload={async (file) => {
-                                file.preview = await getBase64(file);
-                                this.props.onFileUpload({file, groupIndex: index});
-                                return Promise.reject();
-                              }}
-                              accept="image/svg+xml"
-                              fileList={group.sources}
-                              showUploadList={false}
-                            >
-                              <Button>
-                                <UploadOutlined /> Load File(s)
-                              </Button>
-                            </Upload>
-                          </Space>
-                        </Col>
-                        <Col span={24}>
-                          <List
-                            grid={{ column: 6, gutter: 6 }}
-                            dataSource={group.sources}
-                            renderItem={item => {
-                              console.log(group);
-                              return (
-                                <List.Item>
-                                  <Card
-                                    selected
-                                    style={{width: 'auto', height: 'auto'}}
-                                    bodyStyle={{ textAlign: 'center', padding: 6 }}
-                                    hoverable
-                                    actions={[
-                                      <SelectOutlined key="select" onClick={() => this.props.onSetBackgroundPattern({ file: item })} />,
-                                      <CloseOutlined key="remove" onClick={() => this.props.onRemoveBackgroundPattern()}/>,
-                                      <DeleteOutlined key="delete" onClick={() => this.props.onFileListRemoveItem({ item })} />,
-                                    ]}
-                                    cover={<img style={{ maxHeight: 128, padding: 6 }} src={item.preview}/>}
-                                  >
-                                    <Card.Meta description={item.name} />
-                                  </Card>
-                                </List.Item>
-                              );
-                            }}
-                          />
-                        </Col>
-                      </Row>
+                      <BackgroundGroup group={group} groupIndex={index} {...this.props} />
                     </TabPane>
                   );
                 } else if (group.type === 'sticker') {
@@ -424,9 +338,142 @@ class Controls extends React.Component {
   }
 }
 
+const BackgroundGroup = (props) => {
+  const [color, setColor] = useState('#ffffff');
+  const [width, setWidth] = useState(100);
+  const [padding, setPadding] = useState(0);
+  const [offsetX, setOffsetX] = useState(0);
+  const [offsetY, setOffsetY] = useState(0);
+  const [repeat, setRepeat] = useState(true);
+  const [angle, setAngle] = useState(0);
+
+  const group = props.group;
+  const groupIndex = props.groupIndex;
+
+  const handleChangeWidth = (value) => setWidth(value);
+  const handleChangePadding = (value) => setPadding(value);
+  const handleChangeOffsetX = (value) => setOffsetX(value);
+  const handleChangeOffsetY = (value) => setOffsetY(value);
+  const handleChangeRepeat = (event) => setRepeat(event.target.checked);
+  const handleChangeAngle = (value) => setAngle(value);
+
+  const handleChangeColor = (value) => {
+    setColor(value.hex.toLowerCase());
+    props.onBackgroundColorChange(value.hex.toLowerCase());
+  }
+
+  return (
+    <Fragment>
+      <Row gutter={[16, 16]}>
+        <Col span={24}>
+          <Space>
+            <h4>Colors</h4>
+            <Popover
+              overlayClassName="color-picker-popover"
+              overlayStyle={{antPopoverContent: { padding: 0 }}}
+              placement="bottom"
+              content={<SketchPicker color={color}
+              onChangeComplete={handleChangeColor}/>}
+              trigger="click"
+            >
+              <Button icon={<BgColorsOutlined />}>Pick</Button>
+            </Popover>
+            <Button
+              icon={<PlusCircleOutlined />}
+              onClick={() => props.onAddBackgroundColor(color)}
+              disabled={props.backgroundColors.includes(color.toLowerCase())}
+            >
+              Add
+            </Button>
+          </Space>
+        </Col>
+        <Col span={24}>
+          <Space>
+            {props.backgroundColors.map((color, groupIndex) => {
+              return <Tag
+                closable
+                onClose={() => props.onDeleteBackgroundColor(groupIndex)}
+                onClick={() => props.onBackgroundColorChange(color)}
+                key={`${groupIndex}-${color}`}
+                color={color.toLowerCase() === '#ffffff' ? null : color}
+              >
+                {color}
+              </Tag>
+            })}
+          </Space>
+        </Col>
+      </Row>
+      <Row gutter={[16, 16]}>
+        <Col span={24}>
+          <Space>
+            <h4>Patterns</h4>
+            <Upload
+              multiple
+              beforeUpload={async (file) => {
+                file.preview = await getBase64(file);
+                props.onFileUpload({file, groupIndex });
+                return Promise.reject();
+              }}
+              accept="image/svg+xml"
+              fileList={group.sources}
+              showUploadList={false}
+            >
+              <Button>
+                <UploadOutlined /> Load File(s)
+              </Button>
+            </Upload>
+          </Space>
+        </Col>
+        <Col span={24}>
+          <Space>
+            <h4>Repeat</h4>
+            <Checkbox checked={repeat} onChange={handleChangeRepeat} />
+            <h4>Width</h4>
+            <InputNumber step={1} value={width} onChange={handleChangeWidth}/>
+            <h4>Angle</h4>
+            <InputNumber step={1} value={angle} onChange={handleChangeAngle}/>
+            <h4>Padding</h4>
+            <InputNumber step={1} value={padding} onChange={handleChangePadding}/>
+            <h4>OffsetX</h4>
+            <InputNumber step={1} value={offsetX} onChange={handleChangeOffsetX}/>
+            <h4>OffsetY</h4>
+            <InputNumber step={1} value={offsetY} onChange={handleChangeOffsetY}/>
+          </Space>
+        </Col>
+        <Col span={24}>
+          <List
+            grid={{ column: 6, gutter: 6 }}
+            dataSource={group.sources}
+            renderItem={item => {
+              console.log(group);
+              return (
+                <List.Item>
+                  <Card
+                    selected
+                    style={{width: 'auto', height: 'auto'}}
+                    bodyStyle={{ textAlign: 'center', padding: 6 }}
+                    hoverable
+                    actions={[
+                      <SelectOutlined key="select" onClick={() => props.onSetBackgroundPattern({ file: item, width, padding, offsetX, offsetY, repeat, angle })} />,
+                      <CloseOutlined key="remove" onClick={() => props.onRemoveBackgroundPattern()}/>,
+                      <DeleteOutlined key="delete" onClick={() => props.onFileListRemoveItem({ item })} />,
+                    ]}
+                    cover={<img style={{ maxHeight: 128, padding: 6 }} src={item.preview}/>}
+                  >
+                    <Card.Meta description={item.name} />
+                  </Card>
+                </List.Item>
+              );
+            }}
+          />
+        </Col>
+      </Row>
+    </Fragment>
+  );
+}
+
 const TextForm = (props) => {
   const [form] = Form.useForm();
-  console.log(props.group)
 
   const handleValuesChange = (values) => props.onUpdateTextElement({ guuid: props.guuid, ...values });
 
