@@ -274,11 +274,18 @@ class Canvas extends React.Component {
   handleGroupIndexChange = (key) => this.setState({groupIndex: Number.parseInt(key)});
 
   handleFileUpload = ({ file, groupIndex }) => {
+    console.log(file);
     this.setState(state => update(state, {
         groups: {
           [groupIndex]: {
             sources: {
-              $push: [ file ]
+              $push: [{
+                name: file.name,
+                preview: file.preview,
+                uid: file.uid,
+                lastModified: file.lastModified,
+                type: file.type,
+              }]
             }
           }
         }
@@ -546,20 +553,62 @@ class Canvas extends React.Component {
     canvas.discardActiveObject();
     if (activeObjects.length) {
       canvas.remove.apply(canvas, activeObjects);
+      canvas.requestRenderAll();
     }
   }
 
-  handleSetBackground = async file => {
+  handleRemoveBackgroundPattern = () => {
     const canvas = this.canvas;
-    const { previewImage } = this.state;
-    if (previewImage == null) return;
+    
+    console.log('here', canvas);
+    const backgroundPattern = canvas.backgroundPattern;
+    const backgroundColor = canvas.backgroundColor;
+    if (backgroundPattern != null) {
+      const color = backgroundPattern.color;
+      canvas.backgroundPattern = null;
+      this.handleBackgroundColorChange(color);
+    } else {
+      this.handleBackgroundColorChange(backgroundColor);
+    }
+  }
 
-    canvas.backgroundColor = new fabric.Pattern({
-        source: previewImage,
+  handleSetBackgroundPattern = ({file, color}) => {
+    const canvas = this.canvas;
+    const { preview } = file;
+    if (preview == null) return;
+    if (color == null) {
+      color = canvas.backgroundPattern != null ? canvas.backgroundPattern.color : canvas.backgroundColor;
+    };
+
+    const padding = 100;
+
+    fabric.loadSVGFromURL(preview, function(objects, options) {
+      const svg = fabric.util.groupSVGElements(objects, options);
+      console.log(svg)
+      svg.scaleToWidth(600);
+      const patternSourceCanvas = new fabric.StaticCanvas();
+      patternSourceCanvas.setBackgroundColor(color);
+      patternSourceCanvas.add(svg.set({
+        top: 300,
+        left: 300,
+      }));
+      patternSourceCanvas.setDimensions({
+        width: svg.getScaledWidth() + padding,
+        height: svg.getScaledHeight() + padding
+      });
+      patternSourceCanvas.renderAll();
+      canvas.backgroundColor = new fabric.Pattern({
+        source: patternSourceCanvas.toDataURL(),
         repeat: 'repeat',
       }, () => {
         canvas.renderAll();
+      });
     });
+    
+    canvas.backgroundPattern = {
+      file,
+      color,
+    };
   }
   
   handleAddBackgroundColor = (color) => {
@@ -592,8 +641,14 @@ class Canvas extends React.Component {
 
   handleBackgroundColorChange = (color) => {
     const canvas = this.canvas;
-    canvas.backgroundColor = color;
-    canvas.requestRenderAll();
+
+    if (canvas.backgroundPattern != null) {
+      canvas.backgroundPattern.color = color;
+      this.handleSetBackgroundPattern(canvas.backgroundPattern)
+    } else {
+      canvas.backgroundColor = color;
+      canvas.requestRenderAll();
+    }
   }
 
   handleSelectAll = () => {
@@ -657,10 +712,11 @@ class Canvas extends React.Component {
   handleExport = () => {
     const { backgroundColors, backgroundPatterns, groups } = this.state;
     const canvas = this.canvas;
+    console.log('groups', groups);
 
     canvas.backgroundColors = backgroundColors;
     canvas.groups = groups;
-    groups.filter(group => group.type === 'text').map(group => {
+    canvas.groups.filter(group => group.type === 'text').map(group => {
       const match = canvas.getObjects().filter(obj => obj.guuid === group.guuid);
       return {
         ...group,
@@ -678,7 +734,7 @@ class Canvas extends React.Component {
       }
     })
     
-    download(JSON.stringify(this.canvas.toJSON(['backgroundColors', 'groups'])), 'pattern.json', 'application/json');
+    download(JSON.stringify(this.canvas.toJSON(['backgroundColors', 'groups', 'backgroundPattern'])), 'pattern.json', 'application/json');
   };
 
   render () {
@@ -703,7 +759,8 @@ class Canvas extends React.Component {
             <Controls
               id="canvas-controls"
               onSelectAll={this.handleSelectAll}
-              onSetBackground={this.handleSetBackground}
+              onSetBackgroundPattern={this.handleSetBackgroundPattern}     
+              onRemoveBackgroundPattern={this.handleRemoveBackgroundPattern}
               onAddSVGElement={this.handleAddSVGElement}
               onClear={this.handleClear}
               onClone={this.handleClone}

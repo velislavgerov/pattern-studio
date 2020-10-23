@@ -21,6 +21,7 @@ import {
 
 import {
   SelectOutlined,
+  CloseOutlined,
   DeleteOutlined,
   UploadOutlined,
   RetweetOutlined,
@@ -108,7 +109,7 @@ class Controls extends React.Component {
     const {
       color,
     } = this.state;
-    
+
     return (
       <div>
         <Row gutter={[16, 16]}>
@@ -292,20 +293,23 @@ class Controls extends React.Component {
                             grid={{ column: 6, gutter: 6 }}
                             dataSource={group.sources}
                             renderItem={item => {
+                              console.log(group);
                               return (
                                 <List.Item>
                                   <Card
                                     selected
                                     style={{width: 'auto', height: 'auto'}}
-                                    bodyStyle={{ display: 'none' }}
+                                    bodyStyle={{ textAlign: 'center', padding: 6 }}
                                     hoverable
                                     actions={[
-                                      <FileAddOutlined key="select" onClick={() => this.props.onAddSVGElement({ item })} />,
-                                      <RetweetOutlined key="swap" onClick={() => this.props.onSwapSVGElement({ item })}/>,
+                                      <SelectOutlined key="select" onClick={() => this.props.onSetBackgroundPattern({ file: item })} />,
+                                      <CloseOutlined key="remove" onClick={() => this.props.onRemoveBackgroundPattern()}/>,
                                       <DeleteOutlined key="delete" onClick={() => this.props.onFileListRemoveItem({ item })} />,
                                     ]}
                                     cover={<img style={{ maxHeight: 128, padding: 6 }} src={item.preview}/>}
-                                  />
+                                  >
+                                    <Card.Meta description={item.name} />
+                                  </Card>
                                 </List.Item>
                               );
                             }}
@@ -353,7 +357,7 @@ class Controls extends React.Component {
                                 <Card
                                   selected
                                   style={{width: 'auto', height: 'auto'}}
-                                  bodyStyle={{ display: 'none' }}
+                                  bodyStyle={{ textAlign: 'center', padding: 6 }}
                                   hoverable
                                   actions={[
                                     <FileAddOutlined key="select" onClick={() => this.props.onAddSVGElement({ item })} />,
@@ -361,7 +365,9 @@ class Controls extends React.Component {
                                     <DeleteOutlined key="delete" onClick={() => this.props.onFileListRemoveItem({ item })} />,
                                   ]}
                                   cover={<img style={{ maxHeight: 128, padding: 6 }} src={item.preview}/>}
-                                />
+                                >
+                                  <Card.Meta description={item.name} />
+                                </Card>
                               </List.Item>
                             );
                           }}
