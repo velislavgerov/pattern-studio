@@ -57,17 +57,17 @@ const resizeHandler = (event) => {
     event.target.canvas.getObjects()
       .filter(obj => obj.id === event.target.id && obj !== event.target)
       .map(obj => {
-        console.log(obj);
         obj.set({
-          width: event.target.getScaledWidth(),
-          height: event.target.getScaledHeight(),
+          width: event.target.width,
+          height: event.target.height,
           scaleX: event.target.scaleX,
           scaleY: event.target.scaleY,
         });
-        
+        obj.setCoords();
         event.target.canvas.requestRenderAll();
       });
   }
+  
 
   mirrorHandler(event);
 }
@@ -84,19 +84,32 @@ const mirrorHandler = (event) => {
     const brOut = (coords.br.x <= min || coords.br.y <= min || coords.br.x >= max || coords.br.y >= max);
     const blOut = (coords.bl.x <= min || coords.bl.y <= min || coords.bl.x >= max || coords.bl.y >= max);
 
-    const objs = event.target.canvas.getObjects().filter(obj => obj.id === event.target.id && obj !== event.target);
+    const target = event.target;
+    const canvas = event.target.canvas;
+    const rest = canvas.getObjects().filter(obj => obj.id === target.id && obj !== target);
+
+    if (tlOut && trOut && brOut && blOut) {
+      canvas.remove(target);
+      rest.map(obj => {
+        canvas.remove(obj);
+      });
+      
+      canvas.requestRenderAll();
+
+      return;
+    }
     
     let positions = [
       {
-        top: event.target.top,
-        left: event.target.left,
+        top: target.top,
+        left: target.left,
       }
     ];
 
     if (tlOut && blOut) {
       positions.push({
-        top: event.target.top,
-        left: event.target.left + max,
+        top: target.top,
+        left: target.left + max,
       });
       console.log('tlbl');
     }
@@ -138,22 +151,35 @@ const mirrorHandler = (event) => {
     }
 
     positions.forEach((pos, i) => {
-      console.log(pos.top, pos.left);
-      
-      if (objs[i] != undefined) {
-        objs[i].set({
+      console.log(pos, i);
+      if (i === 0 && positions.length === 1) {
+        rest.map(obj => {
+          canvas.remove(obj);
+        });
+
+        return;
+      } else if (i === 0) {
+        return;
+      }
+
+      if (rest[i - 1] != undefined) {
+        rest[i - 1].set({
           top: pos.top,
           left: pos.left,
+          scaleX: target.scaleX,
+          scaleY: target.scaleY,
+          dirty: true,
         });
+        rest[i - 1].setCoords();
       } else {
-        event.target.clone(clone => {
-          event.target.canvas.add(clone.set({
-            id: event.target.id,
-            guuid: event.target.guuid,
+        target.clone(clone => {
+          canvas.add(clone.set({
+            id: target.id,
+            guuid: target.guuid,
             top: pos.top,
             left: pos.left,
-            scaleX: event.target.scaleX,
-            scaleY: event.target.scaleY,
+            scaleX: target.scaleX,
+            scaleY: target.scaleY,
           }).setControlsVisibility({
             mt: false,
             mb: false,
@@ -164,13 +190,15 @@ const mirrorHandler = (event) => {
       }
       
       if (i === positions.length - 1) {
-        objs.slice(i + 1).map(obj => {
-          event.target.canvas.remove(obj);
+        rest.slice(i).map(obj => {
+          canvas.remove(obj);
         });
       };
     });
+
+    console.log(canvas);
     
-    event.target.canvas.requestRenderAll();
+    canvas.requestRenderAll();
   }
 }
 

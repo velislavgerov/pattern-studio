@@ -58,6 +58,7 @@ class Controls extends React.Component {
     this.setState({
       color: color.hex.toLowerCase(),
     });
+    this.props.onBackgroundColorChange(color.hex.toLowerCase());
   }
 
   handleAddText = (values) => {
@@ -112,7 +113,7 @@ class Controls extends React.Component {
       <div>
         <Row gutter={[16, 16]}>
           <Col span={24}>
-            <h4>Canvas Controls</h4>   
+            <h4>Controls</h4>   
             <Upload
               multiple={false}
               accept="application/json"
@@ -228,15 +229,10 @@ class Controls extends React.Component {
                     >
                       <Row gutter={[16, 16]}>
                         <Col span={24}>
-                          <Form.Item
-                            name="background-type"
-                            label="Type"
-                          >
-                            <Radio.Group defaultValue="color" buttonStyle="outlined" style={{ marginBottom: 6 }}>
-                              <Radio.Button value="color"><BgColorsOutlined /> Color</Radio.Button>
-                              <Radio.Button value="pattern" disabled><TableOutlined /> Pattern</Radio.Button>
-                            </Radio.Group>
-                          </Form.Item>
+                          <Radio.Group defaultValue="color" buttonStyle="outlined" style={{ marginBottom: 6 }}>
+                            <Radio.Button value="color"><BgColorsOutlined /> Color</Radio.Button>
+                            <Radio.Button value="pattern" disabled><TableOutlined /> Pattern</Radio.Button>
+                          </Radio.Group>
                         </Col>
                       </Row>
                       <Row gutter={[16, 16]}>
@@ -292,25 +288,20 @@ class Controls extends React.Component {
                       closable={group.closable}
                     >
                       <Col span={24}>
-                        <Form.Item
-                          name="sources"
-                          label="Sources"
+                        <Upload
+                          multiple
+                          accept="image/svg+xml"
+                          fileList={group.sources}
+                          transformFile={async file => {
+                            file.preview = await getBase64(file);
+                          }}
+                          onChange={({ fileList }) => this.props.onFileListChange({ fileList, index })}
+                          showUploadList={false}
                         >
-                          <Upload
-                            multiple
-                            accept="image/svg+xml"
-                            fileList={group.sources}
-                            transformFile={async file => {
-                              file.preview = await getBase64(file);
-                            }}
-                            onChange={({ fileList }) => this.props.onFileListChange({ fileList, index })}
-                            showUploadList={false}
-                          >
-                            <Button>
-                              <UploadOutlined /> Load File(s)
-                            </Button>
-                          </Upload>
-                        </Form.Item>
+                          <Button>
+                            <UploadOutlined /> Load File(s)
+                          </Button>
+                        </Upload>
                       </Col>
                       <Col span={24}>
                         <List
