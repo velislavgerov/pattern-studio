@@ -89,7 +89,6 @@ const mirrorHandler = (event) => {
     const rest = canvas.getObjects().filter(obj => obj.id === target.id && obj !== target);
 
     if (tlOut && trOut && brOut && blOut) {
-      canvas.remove(target);
       rest.map(obj => {
         canvas.remove(obj);
       });
