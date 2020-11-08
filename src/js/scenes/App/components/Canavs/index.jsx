@@ -30,34 +30,6 @@ fabric.Object.prototype.set({
   originY: 'center',
 })
 
-fabric.Object.prototype.toObject = (function(toObject) {
-  return function() {
-    return fabric.util.object.extend(toObject.call(this), {
-      id: this.id,
-      guuid: this.guuid,
-      preview: this.preview,
-    });
-  };
-})(fabric.Object.prototype.toObject);
-
-fabric.Textbox.prototype.toObject = (function(toObject) {
-  return function() {
-    return fabric.util.object.extend(toObject.call(this), {
-      id: this.id,
-      guuid: this.guuid,
-      text: this.text,
-      textAlign: this.textAlign,
-      textBackgroundColor: this.textBackgroundColor,
-      backgroundColor: this.backgroundColor,
-      fill: this.fill,
-      fontFamily: this.fontFamily,
-      fontStyle: this.fontStyle,
-      fontWeight: this.fontWeight,
-      fontSize: this.fontSize,
-    });
-  };
-})(fabric.Textbox.prototype.toObject);
-
 const resizeHandler = (event) => {
   if (event.target != null) {
     event.target.canvas.getObjects()
@@ -97,9 +69,8 @@ const mirrorHandler = (event) => {
     if (tlOut && trOut && brOut && blOut) {
       rest.map(obj => {
         canvas.remove(obj);
+        canvas.requestRenderAll();
       });
-      
-      canvas.requestRenderAll();
 
       return;
     }
@@ -116,7 +87,6 @@ const mirrorHandler = (event) => {
         top: target.top,
         left: target.left + max,
       });
-      console.log('tlbl');
     }
     
     if (tlOut && trOut) {
@@ -128,7 +98,6 @@ const mirrorHandler = (event) => {
           }
         })
       );
-      console.log('tltr');
     }
     
     if (trOut && brOut) {
@@ -140,7 +109,6 @@ const mirrorHandler = (event) => {
           }
         })
       );
-      console.log('trbr');
     }
     
     if (brOut && blOut) {
@@ -152,14 +120,13 @@ const mirrorHandler = (event) => {
           }
         })
       );
-      console.log('brbl');
     }
 
     positions.forEach((pos, i) => {
-      console.log(pos, i);
       if (i === 0 && positions.length === 1) {
         rest.map(obj => {
           canvas.remove(obj);
+          canvas.requestRenderAll();
         });
 
         return;
@@ -177,58 +144,31 @@ const mirrorHandler = (event) => {
         rest[i - 1].setCoords();
       } else {
         target.clone(clone => {
-          /*if (clone.id != null && clone.id.startsWith('svg_')) {
-            fabric.loadSVGFromURL(clone.preview, function(objects, options) {
-              const svg = fabric.util.groupSVGElements(objects, options);
-              svg.set({
-                id: target.id,
-                guuid: target.guuid,
-                top: pos.top,
-                left: pos.left,
-                scaleX: target.scaleX,
-                scaleY: target.scaleY,
-                width: clone.width,
-                height: clone.height,
-                preview: clone.preview,
-              }).setControlsVisibility({
-                mt: false,
-                mb: false,
-                ml: false,
-                mr: false,
-              }).setCoords();
-              canvas.add(svg);
-              canvas.requestRenderAll();
-            });
-          } else {*/
-            canvas.add(clone.set({
-              id: target.id,
-              guuid: target.guuid,
-              top: pos.top,
-              left: pos.left,
-              scaleX: target.scaleX,
-              scaleY: target.scaleY,
-              preview: clone.preview,
-            }).setControlsVisibility({
-              mt: false,
-              mb: false,
-              ml: false,
-              mr: false,
-            }));
-            canvas.requestRenderAll();
-          //}
+          canvas.add(clone.set({
+            id: target.id,
+            guuid: target.guuid,
+            top: pos.top,
+            left: pos.left,
+            scaleX: target.scaleX,
+            scaleY: target.scaleY,
+            preview: clone.preview,
+          }).setControlsVisibility({
+            mt: false,
+            mb: false,
+            ml: false,
+            mr: false,
+          }));
+          canvas.requestRenderAll();
         });
       }
       
       if (i === positions.length - 1) {
         rest.slice(i).map(obj => {
           canvas.remove(obj);
+          canvas.requestRenderAll();
         });
       };
     });
-
-    console.log(canvas);
-    
-    canvas.requestRenderAll();
   }
 }
 
@@ -316,6 +256,7 @@ class Canvas extends React.Component {
                 uid: file.uid,
                 lastModified: file.lastModified,
                 type: file.type,
+                svgJSON: file.svgJSON,
               }]
             }
           }
@@ -430,16 +371,48 @@ class Canvas extends React.Component {
 
     if (item == null) return;
     if ( groups[groupIndex] == null) return;
-
+    console.log(item);
     const guuid = groups[groupIndex].guuid;
+/*
+    if (item.svgJSON != null) {
+      console.log('here');
+      fabric.util.enlivenObjects([JSON.parse(item.svgJSON)], function(objects) {
+        const origRenderOnAddRemove = canvas.renderOnAddRemove;
+        canvas.renderOnAddRemove = false;
+        console.log(objects);
+        objects.forEach(function(o) {
+          canvas.add(o.set({
+              id: 'svg_' + Math.random().toString(36).substr(2, 9),
+              guuid,
+              preview: item.preview,
+              top: 300,
+              left: 300,
+            }).setControlsVisibility({
+              mt: false,
+              mb: false,
+              ml: false,
+              mr: false,
+            }).setCoords()
+          );
+        });
+      
+        canvas.renderOnAddRemove = origRenderOnAddRemove;
+        canvas.requestRenderAll();
+      });
+
+      return;
+    }*/
+
     const previewImage = (item.preview != null) ? item.preview : await getBase64(item.originFileObj);
 
     fabric.loadSVGFromURL(previewImage, function(objects, options) {
       const svg = fabric.util.groupSVGElements(objects, options);
+      console.log(JSON.stringify(svg));
       svg.set({
         id: 'svg_' + Math.random().toString(36).substr(2, 9),
         guuid,
         preview: previewImage,
+        path: previewImage,
       });
       canvas.add(svg.set({
           top: 300,
@@ -457,41 +430,47 @@ class Canvas extends React.Component {
 
   handleSwapGroupSource = async ({ item }) => {
     const canvas = this.canvas;
+
     const { groups, groupIndex } = this.state;
 
     if (item == null) return;
     if (groups[groupIndex] == null) return;
 
     const activeObj = canvas.getActiveObject();
-    
-    const previewImage = (item.preview != null) ? item.preview : await getBase64(item.originFileObj);
+    const { preview } = item;
 
-    canvas.getObjects().filter(obj => obj.guuid === groups[groupIndex].guuid).map(obj => {
-      fabric.loadSVGFromURL(previewImage, function(objects, options) {
-        const svg = fabric.util.groupSVGElements(objects, options);
-        canvas.remove(obj);
-        canvas.add(svg.set({
-          id: obj.id,
-          guuid: obj.guuid,
-          top: obj.top,
-          left: obj.left,
-          scaleX: obj.scaleX,
-          scaleY: obj.scaleY,
-          width: obj.width,
-          height: obj.height,
-          preview: previewImage,
-        }).setControlsVisibility({
-          mt: false,
-          mb: false,
-          ml: false,
-          mr: false,
-        }));
-        if (activeObj != null && JSON.stringify(obj) === JSON.stringify(activeObj)) {
-          canvas.setActiveObject(svg);
-        };
-      });
+    fabric.loadSVGFromURL(preview, function(objects, options) {
+      const svg = fabric.util.groupSVGElements(objects, options);
+      const groupObjs = canvas.getObjects().filter(obj => obj.guuid === groups[groupIndex].guuid);
+      for (const obj of groupObjs) {
+        svg.clone((clone) => {
+          clone.set({
+            id: obj.id,
+            guuid: obj.guuid,
+            top: obj.top,
+            left: obj.left,
+            scaleX: obj.scaleX,
+            scaleY: obj.scaleY,
+            width: obj.width,
+            height: obj.height,
+          }).setControlsVisibility({
+            mt: false,
+            mb: false,
+            ml: false,
+            mr: false,
+          });
+          
+          canvas.remove(obj);
+          canvas.add(clone);
+          
+          if (activeObj != null && JSON.stringify(obj) === JSON.stringify(activeObj)) {
+            canvas.setActiveObject(clone);
+          };
+          
+          canvas.requestRenderAll();
+        });
+      }
     });
-    canvas.requestRenderAll();
   }
 
   handleSwapSVGElement = async ({ item }) => {
@@ -581,42 +560,17 @@ class Canvas extends React.Component {
 
     if (activeObjs != null) {
       activeObjs.clone((clone) => {
-        if (clone.id != null && clone.id.startsWith('svg_')) {
-          fabric.loadSVGFromURL(clone.preview, function(objects, options) {
-            const svg = fabric.util.groupSVGElements(objects, options);
-            svg.set({
-              id: 'svg_' + Math.random().toString(36).substr(2, 9),
-              guuid: activeObjs.guuid,
-              top: clone.top + 10,
-              left: clone.left + 10,
-              scaleX: clone.scaleX,
-              scaleY: clone.scaleY,
-              width: clone.width,
-              height: clone.height,
-              preview: clone.preview,
-            }).setControlsVisibility({
-              mt: false,
-              mb: false,
-              ml: false,
-              mr: false,
-            }).setCoords();
-            canvas.add(svg);
-            canvas.requestRenderAll();
-          });
-        } else {
-          canvas.add(clone.set({
-            id: uuidv4(),
-            guuid: activeObjs.guuid,
-            top: clone.top + 10,
-            let: clone.left + 10,
-          }).setControlsVisibility({
-            mt: false,
-            mb: false,
-            ml: false,
-            mr: false,
-          }));
-          canvas.requestRenderAll();
-        }
+        canvas.add(clone.set({
+          id: uuidv4(),
+          guuid: activeObjs.guuid,
+          top: clone.top + 10,
+          let: clone.left + 10,
+        }).setControlsVisibility({
+          mt: false,
+          mb: false,
+          ml: false,
+          mr: false,
+        })).requestRenderAll();
       });
     }
   }
@@ -635,7 +589,6 @@ class Canvas extends React.Component {
   handleRemoveBackgroundPattern = () => {
     const canvas = this.canvas;
     
-    console.log('here', canvas);
     const backgroundPattern = canvas.backgroundPattern;
     const backgroundColor = canvas.backgroundColor;
     if (backgroundPattern != null) {
@@ -820,7 +773,7 @@ class Canvas extends React.Component {
       }
     })
     
-    download(JSON.stringify(this.canvas.toJSON(['backgroundColors', 'groups', 'backgroundPattern'])), 'pattern.json', 'application/json');
+    download(JSON.stringify(this.canvas.toJSON(['id', 'guuid','backgroundColors', 'groups', 'backgroundPattern'])), 'pattern.json', 'application/json');
   };
 
   render () {

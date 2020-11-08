@@ -242,7 +242,7 @@ class Controls extends React.Component {
                           multiple
                           beforeUpload={async (file) => {
                             file.preview = await getBase64(file);
-                            this.props.onFileUpload({file, groupIndex: index});
+                            this.props.onFileUpload({ file, groupIndex: index });
                             return Promise.reject();
                           }}
                           accept="image/svg+xml"
@@ -404,7 +404,7 @@ const BackgroundGroup = (props) => {
               multiple
               beforeUpload={async (file) => {
                 file.preview = await getBase64(file);
-                props.onFileUpload({file, groupIndex });
+                props.onFileUpload({ file, groupIndex });
                 return Promise.reject();
               }}
               accept="image/svg+xml"
