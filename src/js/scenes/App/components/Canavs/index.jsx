@@ -461,16 +461,13 @@ class Canvas extends React.Component {
             guuid: obj.guuid,
             top: obj.top,
             left: obj.left,
-            scaleX: obj.scaleX,
-            scaleY: obj.scaleY,
-            width: obj.width,
-            height: obj.height,
           }).setControlsVisibility({
             mt: false,
             mb: false,
             ml: false,
             mr: false,
-          });
+          }).scaleToWidth(obj.getScaledWidth())
+            .scaleToHeight(obj.getScaledHeight());
           
           canvas.remove(obj);
           canvas.add(clone);
