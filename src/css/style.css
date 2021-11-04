@@ -3,9 +3,11 @@
   background: #001529;
 }
 
-.logo {
-  margin: 16px 24px 16px 0;
-  float: left;
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
 }
 
 .app-layout-background {
@@ -22,11 +24,11 @@
   text-align: center;
 }
 
-.app-layout-footer>a {
+.app-layout-footer > a {
   color: #ff4d4f;
 }
 
-.app-layout-footer>a:hover {
+.app-layout-footer > a:hover {
   color: #ff7875;
 }
 
@@ -34,6 +36,9 @@
   border: 1px solid #f0f0f0;
 }
 
-.color-picker-popover>.ant-popover-content>.ant-popover-inner>.ant-popover-inner-content {
+.color-picker-popover
+  > .ant-popover-content
+  > .ant-popover-inner
+  > .ant-popover-inner-content {
   padding: 0;
 }

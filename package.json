@@ -1,10 +1,10 @@
 {
   "name": "pattern-studio",
-  "version": "0.0.1",
-  "description": "An app to design and print patterns.",
+  "version": "0.0.2",
+  "description": "A tool to create configurable tiles that assemble patterns for print.",
   "main": "/src/index.js",
   "scripts": {
-    "start-dev": "webpack serve --mode development --env development",
+    "dev": "webpack serve --mode development --env development",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack --mode production",
     "start": "node server.js",
@@ -13,16 +13,19 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/thunderstruck47/pattern-studio.git"
+    "url": "git+https://github.com/velislavgerov/pattern-studio.git"
   },
   "keywords": [
     "design",
     "pattern",
     "print",
-    "studio"
+    "react",
+    "fabricjs",
+    "tiles",
+    "images"
   ],
   "author": "Velislav Gerov <vgerov93@gmail.com>",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/thunderstruck47/pattern-studio/issues"
   },
