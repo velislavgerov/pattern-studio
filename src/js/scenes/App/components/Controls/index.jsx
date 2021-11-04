@@ -1,4 +1,4 @@
-import React, { useEffect, useState, Fragment } from 'react';
+import React, { useState, Fragment } from 'react';
 import { getBase64, getTextFile } from 'js/misc';
 
 import {
@@ -18,7 +18,12 @@ import {
   Input,
   InputNumber,
   Checkbox,
+  Typography
 } from 'antd';
+
+const {
+  Title,
+} = Typography;
 
 import {
   SelectOutlined,
@@ -115,7 +120,7 @@ class Controls extends React.Component {
       <div>
         <Row gutter={[16, 16]}>
           <Col span={24}>
-            <h4>Controls</h4>   
+            <Title level={5}>Controls</Title>
             <Upload
               multiple={false}
               accept="application/json"
@@ -202,7 +207,7 @@ class Controls extends React.Component {
         </Row>
         <Row gutter={[16, 16]}>
           <Col span={24}>
-            <h4>Layers</h4>
+            <Title level={5}>Elements</Title>
             <Tabs
               type="editable-card"
               tabPosition="top"

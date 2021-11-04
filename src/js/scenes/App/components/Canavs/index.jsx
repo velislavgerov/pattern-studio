@@ -10,6 +10,7 @@ import {
   Slider,
   InputNumber,
   Button,
+  Typography,
 } from 'antd';
 
 import {
@@ -18,6 +19,11 @@ import {
 
 import { getBase64, download, downloadDataURL, uuidv4 } from 'js/misc';
 import Controls from '../Controls';
+import pattern from '../../../../../../pattern.json';
+
+const {
+  Title,
+ } = Typography;
 
 fabric.Object.prototype.set({
   cornerStyle: 'square',
@@ -211,6 +217,12 @@ class Canvas extends React.Component {
       'object:moving': mirrorHandler,
       'object:scaling': resizeHandler,
     });
+    this.canvas.loadFromJSON(pattern)
+    this.setState({
+      backgroundColors: pattern.backgroundColors,
+      groups: pattern.groups,
+      groupIndex: 0,
+    })
   };
 
   handleAddGroup = ({ title, type, content }) => {
@@ -791,7 +803,7 @@ class Canvas extends React.Component {
       <div>
         <Row gutter={16}>
           <Col md={24} lg={12}>
-            <h4>Canvas</h4>
+            <Title level={5}>Canvas</Title>
             <canvas id="canvas"></canvas>
           </Col>
           <Col md={24} lg={12}>
