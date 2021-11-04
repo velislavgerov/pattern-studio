@@ -1,5 +1,5 @@
 # Pattern Studio
-A tool to create configurable tiles that assemble patterns for print.
+A tool to create configurable tiles that assemble as patterns for print.
 
 ## 🚀 Check out live
 The latest version is deployed to Heroku at [pattern-studio.herokuapp.com](https://pattern-studio.herokuapp.com/ "Link to Pattern Studio deployment on Heroku")
